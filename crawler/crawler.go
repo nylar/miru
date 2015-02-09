@@ -1,11 +1,17 @@
 package crawler
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
-var UserAgent = "Miru/1.0 (+http://www.miru.nylar.io)"
+var (
+	UserAgent    = "Miru/1.0 (+http://www.miru.nylar.io)"
+	UnwantedTags = "style, script, link, iframe, frame, embed"
+)
 
 func getDocument(url string) ([]byte, error) {
 	client := &http.Client{}
@@ -23,4 +29,11 @@ func getDocument(url string) ([]byte, error) {
 	defer response.Body.Close()
 
 	return data, nil
+}
+
+func NewDocument(document []byte) *goquery.Document {
+	doc, _ := goquery.NewDocumentFromReader(bytes.NewReader(document))
+	doc.Find(UnwantedTags).Remove()
+
+	return doc
 }
