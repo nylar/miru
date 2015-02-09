@@ -54,7 +54,7 @@ func TestModels_NewSite(t *testing.T) {
 	assert.Equal(t, site.SiteID, url)
 }
 
-func TestIndexer_SitePut(t *testing.T) {
+func TestModels_SitePut(t *testing.T) {
 	defer tearDbDown()
 
 	site := Site{SiteID: "example.com"}
@@ -72,7 +72,7 @@ func TestIndexer_SitePut(t *testing.T) {
 	assert.Equal(t, s.SiteID, "example.com")
 }
 
-func TestIndexer_SitePut_Duplicate(t *testing.T) {
+func TestModels_SitePut_Duplicate(t *testing.T) {
 	defer tearDbDown()
 
 	site := Site{SiteID: "example.com"}
@@ -99,7 +99,7 @@ func TestModels_NewDocument(t *testing.T) {
 	assert.Equal(t, doc.Content, content)
 }
 
-func TestIndexer_DocumentPut(t *testing.T) {
+func TestModels_DocumentPut(t *testing.T) {
 	defer tearDbDown()
 
 	doc := Document{
@@ -122,7 +122,7 @@ func TestIndexer_DocumentPut(t *testing.T) {
 	assert.Equal(t, d.DocID, "example.com/about/")
 }
 
-func TestIndexer_DocumentPut_Duplicate(t *testing.T) {
+func TestModels_DocumentPut_Duplicate(t *testing.T) {
 	defer tearDbDown()
 
 	doc := Document{DocID: "example.com/about/"}
@@ -149,7 +149,7 @@ func TestModels_NewIndex(t *testing.T) {
 	assert.Equal(t, index.IndexID, "example.com/about/::make")
 }
 
-func TestIndexer_IndexPut(t *testing.T) {
+func TestModels_IndexPut(t *testing.T) {
 	defer tearDbDown()
 
 	index := Index{
@@ -172,7 +172,7 @@ func TestIndexer_IndexPut(t *testing.T) {
 	assert.Equal(t, i.IndexID, "example.com/about/::make")
 }
 
-func TestIndexer_IndexPut_Duplicate(t *testing.T) {
+func TestModels_IndexPut_Duplicate(t *testing.T) {
 	defer tearDbDown()
 
 	index := Index{DocID: "example.com/about/", Word: "make"}
@@ -182,5 +182,35 @@ func TestIndexer_IndexPut_Duplicate(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = index2.Put(_conn)
+	assert.Error(t, err)
+}
+
+func TestModels_IndexesPut(t *testing.T) {
+	indexes := Indexes{
+		{
+			IndexID: "example.com/about/::hello",
+			Word:    "hello",
+		},
+		{
+			IndexID: "example.com/about/::world",
+			Word:    "world",
+		},
+	}
+	err := indexes.Put(_conn)
+	assert.NoError(t, err)
+}
+
+func TestModels_IndexesPut_Duplicate(t *testing.T) {
+	indexes := Indexes{
+		{
+			IndexID: "example.com/about/::hello",
+			Word:    "hello",
+		},
+		{
+			IndexID: "example.com/about/::hello",
+			Word:    "hello",
+		},
+	}
+	err := indexes.Put(_conn)
 	assert.Error(t, err)
 }
