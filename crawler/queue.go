@@ -21,12 +21,23 @@ func (q *Queue) QueuePush(link string) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
+	for _, l := range q.queue {
+		if l == link {
+			return
+		}
+	}
 	q.queue = append(q.queue, link)
 }
 
 func (q *Queue) PoolPush(link string) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
+
+	for _, l := range q.pool {
+		if l == link {
+			return
+		}
+	}
 
 	q.pool = append(q.pool, link)
 }

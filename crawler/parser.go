@@ -28,3 +28,14 @@ func ExtractText(doc *goquery.Document) string {
 	})
 	return strings.Join(texts, "\n")
 }
+
+func ExtractLinks(doc *goquery.Document, queue *Queue) {
+	doc.Find("a").Each(func(i int, s *goquery.Selection) {
+		// Only interested in anchors that have a href attribute.
+		link, href := s.Attr("href")
+		if href {
+			queue.QueuePush(link)
+		}
+	})
+	return
+}

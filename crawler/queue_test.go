@@ -33,10 +33,48 @@ func TestQueue_QueuePush(t *testing.T) {
 	assert.Equal(t, len(q.queue), 3)
 }
 
+func TestQueue_QueuePush_WithDuplicates(t *testing.T) {
+	q := NewQueue()
+
+	links := []string{"link1", "link2", "link3", "link1"}
+
+	var wg sync.WaitGroup
+	wg.Add(len(links))
+	for _, link := range links {
+		go func(link string) {
+			defer wg.Done()
+			q.QueuePush(link)
+		}(link)
+	}
+
+	wg.Wait()
+
+	assert.Equal(t, len(q.queue), 3)
+}
+
 func TestQueue_PoolPush(t *testing.T) {
 	q := NewQueue()
 
 	links := []string{"link1", "link2", "link3"}
+
+	var wg sync.WaitGroup
+	wg.Add(len(links))
+	for _, link := range links {
+		go func(link string) {
+			defer wg.Done()
+			q.PoolPush(link)
+		}(link)
+	}
+
+	wg.Wait()
+
+	assert.Equal(t, len(q.pool), 3)
+}
+
+func TestQueue_PoolPush_WithDuplicates(t *testing.T) {
+	q := NewQueue()
+
+	links := []string{"link1", "link2", "link3", "link1"}
 
 	var wg sync.WaitGroup
 	wg.Add(len(links))

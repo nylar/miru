@@ -83,3 +83,56 @@ func TestParser_ExtractTextFromPTags(t *testing.T) {
 	text := ExtractText(doc)
 	assert.Equal(t, "I am text one.\nI am text two.", text)
 }
+
+func TestParser_ExtractLinks_Empty(t *testing.T) {
+	doc := NewDocument([]byte{})
+	q := NewQueue()
+
+	ExtractLinks(doc, q)
+
+	assert.Equal(t, q.Len(), 0)
+}
+
+func TestParser_ExtractLinks_Valid(t *testing.T) {
+	htmlSoup := []byte(`
+<p>
+	<a href="http://example.org/1">Link 1</a>
+	<br>
+	<a href="http://example.org/2">Link 2</a>
+</p>`)
+
+	doc := NewDocument(htmlSoup)
+	q := NewQueue()
+
+	ExtractLinks(doc, q)
+
+	assert.Equal(t, q.Len(), 2)
+}
+
+func TestParser_ExtractLinks_Invalid(t *testing.T) {
+	// This should return an error but html.Parse doesn't seem to care.
+	invalidHTML := []byte(`<html><body><aef<eqf>>>qq></body></ht>`)
+
+	doc := NewDocument(invalidHTML)
+	q := NewQueue()
+	ExtractLinks(doc, q)
+
+	assert.Equal(t, q.Len(), 0)
+}
+
+func TestParser_ExtractLinks_NoDuplicates(t *testing.T) {
+	htmlWithDupes := []byte(`
+<p>
+	<a href="http://example.org/1">Link 1</a>
+	<a href="http://example.org/2">Link 1</a>
+	<a href="http://example.org/3">Link 1</a>
+	<a href="http://example.org/1">Link 1</a>
+</p>`)
+
+	doc := NewDocument(htmlWithDupes)
+	q := NewQueue()
+
+	ExtractLinks(doc, q)
+
+	assert.Equal(t, q.Len(), 3)
+}
