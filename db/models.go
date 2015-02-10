@@ -78,7 +78,7 @@ func (i *Index) Put(conn *Connection) error {
 	return nil
 }
 
-type Indexes []Index
+type Indexes []*Index
 
 func (ixs *Indexes) Put(conn *Connection) error {
 	res, _ := rdb.Db(Database).Table(IndexTable).Insert(ixs).RunWrite(conn.Session)

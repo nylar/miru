@@ -1,5 +1,12 @@
 package index
 
+import (
+	"strings"
+
+	"github.com/nylar/miru/db"
+	"github.com/reiver/go-porterstemmer"
+)
+
 var stopWords = map[string]bool{
 	"a":          true,
 	"about":      true,
@@ -182,4 +189,32 @@ func Stopper(word string) bool {
 		return true
 	}
 	return false
+}
+
+func Normalise(word string) string {
+	word = strings.ToLower(word)
+	if Stopper(word) {
+		return ""
+	}
+	// TODO: Remove punctuation
+	word = string(porterstemmer.StemWithoutLowerCasing([]rune(word)))
+	return word
+}
+
+func Index(text, docID string) db.Indexes {
+	indexes := db.Indexes{}
+	words := strings.Fields(text)
+
+	for _, word := range words {
+		word = Normalise(word)
+		if word == "" {
+			continue
+		}
+
+		index := db.NewIndex(docID, word, 1)
+		index.GenerateID(docID, word)
+		indexes = append(indexes, index)
+	}
+
+	return indexes
 }

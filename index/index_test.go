@@ -1,8 +1,10 @@
 package index
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/nylar/miru/db"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,5 +36,66 @@ func TestIndex_Stopper(t *testing.T) {
 
 	for _, test := range tests {
 		assert.Equal(t, test.Output, Stopper(test.Input))
+	}
+}
+
+func TestIndex_Normalise(t *testing.T) {
+	tests := []struct {
+		Input  string
+		Output string
+	}{
+		{
+			"Capitalised",
+			"capitalis",
+		},
+		{
+			"UPPERCASE",
+			"uppercas",
+		},
+		{
+			"lowercase",
+			"lowercas",
+		},
+		{
+			"the",
+			"",
+		},
+		// {
+		// 	"with-punctuation?!",
+		// 	"with-punctuation",
+		// },
+		{
+			"stemmed",
+			"stem",
+		},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, test.Output, Normalise(test.Input))
+	}
+}
+
+func TestIndex_Index(t *testing.T) {
+	docID := "example.com/about/"
+
+	tests := []struct {
+		Input  string
+		Output db.Indexes
+	}{
+		{
+			"I am a block of text and I am going to be indexed",
+			db.Indexes{
+				db.NewIndex(docID, "block", 1),
+				db.NewIndex(docID, "text", 1),
+				db.NewIndex(docID, "going", 1),
+				db.NewIndex(docID, "indexed", 1),
+			},
+		},
+	}
+
+	for x, test := range tests {
+		i := Index(test.Input, docID)
+		assert.Equal(t, fmt.Sprintf("%s::%s", docID, i[x].Word), i[x].IndexID)
+		assert.Equal(t, len(test.Output), len(i))
 	}
 }
