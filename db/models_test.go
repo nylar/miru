@@ -1,50 +1,11 @@
 package db
 
 import (
-	"log"
 	"testing"
 
 	rdb "github.com/dancannon/gorethink"
 	"github.com/stretchr/testify/assert"
 )
-
-var _conn *Connection
-
-func init() {
-	var err error
-	_conn, err = NewConnection("test", "localhost:28015")
-	if err != nil {
-		log.Fatalln("Could not create a connection for testing. Exiting.")
-	}
-
-	Database = "testing"
-
-	rdb.DbCreate(Database).Exec(_conn.Session)
-	rdb.Db(Database).TableCreate(SiteTable).Exec(_conn.Session)
-	rdb.Db(Database).TableCreate(DocumentTable).Exec(_conn.Session)
-	rdb.Db(Database).TableCreate(IndexTable).Exec(_conn.Session)
-	rdb.Db(Database).Table(IndexTable).IndexCreate("word").Exec(_conn.Session)
-}
-
-func tearDbDown() {
-	// Clear 'Site' table
-	rdb.Db(Database).Table(SiteTable).Delete(rdb.DeleteOpts{
-		Durability:    "soft",
-		ReturnChanges: false,
-	}).Exec(_conn.Session)
-
-	// Clear 'Document' table
-	rdb.Db(Database).Table(DocumentTable).Delete(rdb.DeleteOpts{
-		Durability:    "soft",
-		ReturnChanges: false,
-	}).Exec(_conn.Session)
-
-	// Clear 'Index' table
-	rdb.Db(Database).Table(IndexTable).Delete(rdb.DeleteOpts{
-		Durability:    "soft",
-		ReturnChanges: false,
-	}).Exec(_conn.Session)
-}
 
 func TestModels_NewSite(t *testing.T) {
 	url := "example.com"
@@ -55,14 +16,14 @@ func TestModels_NewSite(t *testing.T) {
 }
 
 func TestModels_SitePut(t *testing.T) {
-	defer tearDbDown()
+	defer TearDbDown()
 
 	site := Site{SiteID: "example.com"}
 
-	err := site.Put(_conn)
+	err := site.Put(TestConn)
 	assert.NoError(t, err)
 
-	res, err := rdb.Db(Database).Table(SiteTable).Get(site.SiteID).Run(_conn.Session)
+	res, err := rdb.Db(Database).Table(SiteTable).Get(site.SiteID).Run(TestConn.Session)
 	assert.NoError(t, err)
 
 	var s Site
@@ -73,15 +34,15 @@ func TestModels_SitePut(t *testing.T) {
 }
 
 func TestModels_SitePut_Duplicate(t *testing.T) {
-	defer tearDbDown()
+	defer TearDbDown()
 
 	site := Site{SiteID: "example.com"}
 	site2 := Site{SiteID: "example.com"}
 
-	err := site.Put(_conn)
+	err := site.Put(TestConn)
 	assert.NoError(t, err)
 
-	err = site2.Put(_conn)
+	err = site2.Put(TestConn)
 	assert.Error(t, err)
 }
 
@@ -100,7 +61,7 @@ func TestModels_NewDocument(t *testing.T) {
 }
 
 func TestModels_DocumentPut(t *testing.T) {
-	defer tearDbDown()
+	defer TearDbDown()
 
 	doc := Document{
 		DocID:   "example.com/about/",
@@ -109,10 +70,10 @@ func TestModels_DocumentPut(t *testing.T) {
 		Content: "We make examples and things.",
 	}
 
-	err := doc.Put(_conn)
+	err := doc.Put(TestConn)
 	assert.NoError(t, err)
 
-	res, err := rdb.Db(Database).Table(DocumentTable).Get(doc.DocID).Run(_conn.Session)
+	res, err := rdb.Db(Database).Table(DocumentTable).Get(doc.DocID).Run(TestConn.Session)
 	assert.NoError(t, err)
 
 	var d Document
@@ -123,15 +84,15 @@ func TestModels_DocumentPut(t *testing.T) {
 }
 
 func TestModels_DocumentPut_Duplicate(t *testing.T) {
-	defer tearDbDown()
+	defer TearDbDown()
 
 	doc := Document{DocID: "example.com/about/"}
 	doc2 := Document{DocID: "example.com/about/"}
 
-	err := doc.Put(_conn)
+	err := doc.Put(TestConn)
 	assert.NoError(t, err)
 
-	err = doc2.Put(_conn)
+	err = doc2.Put(TestConn)
 	assert.Error(t, err)
 }
 
@@ -150,7 +111,7 @@ func TestModels_NewIndex(t *testing.T) {
 }
 
 func TestModels_IndexPut(t *testing.T) {
-	defer tearDbDown()
+	defer TearDbDown()
 
 	index := Index{
 		DocID: "example.com/about/",
@@ -159,10 +120,10 @@ func TestModels_IndexPut(t *testing.T) {
 	}
 	index.GenerateID(index.DocID, index.Word)
 
-	err := index.Put(_conn)
+	err := index.Put(TestConn)
 	assert.NoError(t, err)
 
-	res, err := rdb.Db(Database).Table(IndexTable).Get(index.IndexID).Run(_conn.Session)
+	res, err := rdb.Db(Database).Table(IndexTable).Get(index.IndexID).Run(TestConn.Session)
 	assert.NoError(t, err)
 
 	var i Index
@@ -173,15 +134,15 @@ func TestModels_IndexPut(t *testing.T) {
 }
 
 func TestModels_IndexPut_Duplicate(t *testing.T) {
-	defer tearDbDown()
+	defer TearDbDown()
 
 	index := Index{DocID: "example.com/about/", Word: "make"}
 	index2 := Index{DocID: "example.com/about/", Word: "make"}
 
-	err := index.Put(_conn)
+	err := index.Put(TestConn)
 	assert.NoError(t, err)
 
-	err = index2.Put(_conn)
+	err = index2.Put(TestConn)
 	assert.Error(t, err)
 }
 
@@ -196,7 +157,7 @@ func TestModels_IndexesPut(t *testing.T) {
 			Word:    "world",
 		},
 	}
-	err := indexes.Put(_conn)
+	err := indexes.Put(TestConn)
 	assert.NoError(t, err)
 }
 
@@ -211,6 +172,6 @@ func TestModels_IndexesPut_Duplicate(t *testing.T) {
 			Word:    "hello",
 		},
 	}
-	err := indexes.Put(_conn)
+	err := indexes.Put(TestConn)
 	assert.Error(t, err)
 }
