@@ -3,7 +3,10 @@ package search
 import (
 	"fmt"
 	"html/template"
+	"strings"
+	"time"
 
+	rdb "github.com/dancannon/gorethink"
 	"github.com/nylar/miru/db"
 )
 
@@ -32,4 +35,31 @@ func (rxs *Results) RenderCount() string {
 
 func (rxs *Results) RenderCountHTML() template.HTML {
 	return template.HTML(rxs.RenderCount())
+}
+
+func (rxs *Results) Search(query string, conn *db.Connection) error {
+	start := time.Now()
+
+	keywords := rxs.ParseQuery(query)
+	results, err := rdb.Db(
+		db.Database).Table(
+		db.IndexTable).GetAllByIndex(
+		"word", rdb.Args(keywords)).EqJoin(
+		"doc_id", rdb.Db(db.Database).Table(
+			db.DocumentTable)).Zip().OrderBy(
+		rdb.Desc("count")).Run(conn.Session)
+
+	if err != nil {
+		return err
+	}
+	results.All(&rxs.Results)
+
+	t := time.Since(start).Seconds()
+	rxs.Speed = t
+
+	return nil
+}
+
+func (rxs *Results) ParseQuery(query string) []string {
+	return strings.Split(query, " ")
 }

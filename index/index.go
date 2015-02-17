@@ -201,6 +201,26 @@ func Normalise(word string) string {
 	return word
 }
 
+func RemoveDuplicates(i db.Indexes) db.Indexes {
+	result := db.Indexes{}
+	seen := map[string]int64{}
+	for _, val := range i {
+		if _, ok := seen[val.Word]; !ok {
+			result = append(result, val)
+			seen[val.Word] = seen[val.Word] + 1
+		} else {
+			seen[val.Word] = seen[val.Word] + 1
+		}
+	}
+	finalResults := db.Indexes{}
+	for _, res := range result {
+		count := seen[res.Word]
+		res.Count = count
+		finalResults = append(finalResults, res)
+	}
+	return finalResults
+}
+
 func Index(text, docID string) db.Indexes {
 	indexes := db.Indexes{}
 	words := strings.Fields(text)
@@ -216,5 +236,5 @@ func Index(text, docID string) db.Indexes {
 		indexes = append(indexes, index)
 	}
 
-	return indexes
+	return RemoveDuplicates(indexes)
 }

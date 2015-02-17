@@ -1,6 +1,7 @@
 package index
 
 import (
+	"encoding/base64"
 	"fmt"
 	"testing"
 
@@ -95,7 +96,18 @@ func TestIndex_Index(t *testing.T) {
 
 	for x, test := range tests {
 		i := Index(test.Input, docID)
-		assert.Equal(t, fmt.Sprintf("%s::%s", docID, i[x].Word), i[x].IndexID)
+		id := fmt.Sprintf("%s::%s", docID, i[x].Word)
+
+		assert.Equal(
+			t,
+			base64.StdEncoding.EncodeToString([]byte(id)),
+			i[x].IndexID,
+		)
 		assert.Equal(t, len(test.Output), len(i))
 	}
+}
+
+func TestIndex_RemoveDuplicates(t *testing.T) {
+	indexes := Index("hello world cruel world hello world", "")
+	assert.Equal(t, len(indexes), 3)
 }

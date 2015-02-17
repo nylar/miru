@@ -1,50 +1,12 @@
 package db
 
 import (
+	"encoding/base64"
 	"testing"
 
 	rdb "github.com/dancannon/gorethink"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestModels_NewSite(t *testing.T) {
-	url := "example.com"
-	site := NewSite(url)
-
-	assert.IsType(t, site, new(Site))
-	assert.Equal(t, site.SiteID, url)
-}
-
-func TestModels_SitePut(t *testing.T) {
-	defer TearDbDown()
-
-	site := Site{SiteID: "example.com"}
-
-	err := site.Put(TestConn)
-	assert.NoError(t, err)
-
-	res, err := rdb.Db(Database).Table(SiteTable).Get(site.SiteID).Run(TestConn.Session)
-	assert.NoError(t, err)
-
-	var s Site
-	err = res.One(&s)
-	assert.NoError(t, err)
-
-	assert.Equal(t, s.SiteID, "example.com")
-}
-
-func TestModels_SitePut_Duplicate(t *testing.T) {
-	defer TearDbDown()
-
-	site := Site{SiteID: "example.com"}
-	site2 := Site{SiteID: "example.com"}
-
-	err := site.Put(TestConn)
-	assert.NoError(t, err)
-
-	err = site2.Put(TestConn)
-	assert.Error(t, err)
-}
 
 func TestModels_NewDocument(t *testing.T) {
 	source := "example.com/about/"
@@ -54,45 +16,40 @@ func TestModels_NewDocument(t *testing.T) {
 	doc := NewDocument(source, url, title, content)
 
 	assert.IsType(t, doc, new(Document))
-	assert.Equal(t, doc.DocID, source)
-	assert.Equal(t, doc.SiteID, url)
+	assert.Equal(t, doc.DocID, base64.StdEncoding.EncodeToString([]byte(source)))
+	assert.Equal(t, doc.Site, url)
 	assert.Equal(t, doc.Title, title)
 	assert.Equal(t, doc.Content, content)
 }
 
 func TestModels_DocumentPut(t *testing.T) {
-	defer TearDbDown()
+	defer TearDbDown(_testConn)
 
-	doc := Document{
-		DocID:   "example.com/about/",
-		SiteID:  "example.com",
-		Title:   "About Example Inc.",
-		Content: "We make examples and things.",
-	}
+	doc := NewDocument("example.com/about/", "example.com", "About Example Inc.", "We make examples and things.")
 
-	err := doc.Put(TestConn)
+	err := doc.Put(_testConn)
 	assert.NoError(t, err)
 
-	res, err := rdb.Db(Database).Table(DocumentTable).Get(doc.DocID).Run(TestConn.Session)
+	res, err := rdb.Db(Database).Table(DocumentTable).Get(doc.DocID).Run(_testConn.Session)
 	assert.NoError(t, err)
 
 	var d Document
 	err = res.One(&d)
 	assert.NoError(t, err)
 
-	assert.Equal(t, d.DocID, "example.com/about/")
+	assert.Equal(t, d.DocID, base64.StdEncoding.EncodeToString([]byte("example.com/about/")))
 }
 
 func TestModels_DocumentPut_Duplicate(t *testing.T) {
-	defer TearDbDown()
+	defer TearDbDown(_testConn)
 
-	doc := Document{DocID: "example.com/about/"}
-	doc2 := Document{DocID: "example.com/about/"}
+	doc := NewDocument("example.com/about/", "example.com", "", "")
+	doc2 := NewDocument("example.com/about/", "example.com", "", "")
 
-	err := doc.Put(TestConn)
+	err := doc.Put(_testConn)
 	assert.NoError(t, err)
 
-	err = doc2.Put(TestConn)
+	err = doc2.Put(_testConn)
 	assert.Error(t, err)
 }
 
@@ -107,11 +64,11 @@ func TestModels_NewIndex(t *testing.T) {
 	assert.Equal(t, index.DocID, doc)
 	assert.Equal(t, index.Word, word)
 	assert.Equal(t, index.Count, count)
-	assert.Equal(t, index.IndexID, "example.com/about/::make")
+	assert.Equal(t, index.IndexID, base64.StdEncoding.EncodeToString([]byte("example.com/about/::make")))
 }
 
 func TestModels_IndexPut(t *testing.T) {
-	defer TearDbDown()
+	defer TearDbDown(_testConn)
 
 	index := Index{
 		DocID: "example.com/about/",
@@ -120,29 +77,29 @@ func TestModels_IndexPut(t *testing.T) {
 	}
 	index.GenerateID(index.DocID, index.Word)
 
-	err := index.Put(TestConn)
+	err := index.Put(_testConn)
 	assert.NoError(t, err)
 
-	res, err := rdb.Db(Database).Table(IndexTable).Get(index.IndexID).Run(TestConn.Session)
+	res, err := rdb.Db(Database).Table(IndexTable).Get(index.IndexID).Run(_testConn.Session)
 	assert.NoError(t, err)
 
 	var i Index
 	err = res.One(&i)
 	assert.NoError(t, err)
 
-	assert.Equal(t, i.IndexID, "example.com/about/::make")
+	assert.Equal(t, i.IndexID, base64.StdEncoding.EncodeToString([]byte("example.com/about/::make")))
 }
 
 func TestModels_IndexPut_Duplicate(t *testing.T) {
-	defer TearDbDown()
+	defer TearDbDown(_testConn)
 
-	index := Index{DocID: "example.com/about/", Word: "make"}
-	index2 := Index{DocID: "example.com/about/", Word: "make"}
+	index := Index{DocID: "ZXhhbXBsZS5jb20vYWJvdXQv", Word: "make"}
+	index2 := Index{DocID: "ZXhhbXBsZS5jb20vYWJvdXQv", Word: "make"}
 
-	err := index.Put(TestConn)
+	err := index.Put(_testConn)
 	assert.NoError(t, err)
 
-	err = index2.Put(TestConn)
+	err = index2.Put(_testConn)
 	assert.Error(t, err)
 }
 
@@ -157,7 +114,7 @@ func TestModels_IndexesPut(t *testing.T) {
 			Word:    "world",
 		},
 	}
-	err := indexes.Put(TestConn)
+	err := indexes.Put(_testConn)
 	assert.NoError(t, err)
 }
 
@@ -172,6 +129,6 @@ func TestModels_IndexesPut_Duplicate(t *testing.T) {
 			Word:    "hello",
 		},
 	}
-	err := indexes.Put(TestConn)
+	err := indexes.Put(_testConn)
 	assert.Error(t, err)
 }

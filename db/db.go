@@ -4,7 +4,6 @@ import rdb "github.com/dancannon/gorethink"
 
 var (
 	Database      = "miru"
-	SiteTable     = "sites"
 	DocumentTable = "documents"
 	IndexTable    = "indexes"
 )

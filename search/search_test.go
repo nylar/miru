@@ -2,10 +2,27 @@ package search
 
 import (
 	"html/template"
+	"log"
+	"os"
 	"testing"
 
+	rdb "github.com/dancannon/gorethink"
+	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/index"
 	"github.com/stretchr/testify/assert"
 )
+
+var _testConn *db.Connection
+
+func init() {
+	var err error
+	_testConn, err = db.NewConnection("test", os.Getenv("RETHINKDB_URL"))
+	if err != nil {
+		log.Fatalln("Could not create a connection for testing. Exiting.")
+	}
+
+	db.SetDbUp(_testConn, "search")
+}
 
 func TestSearch_RenderSpeed(t *testing.T) {
 	tests := []struct {
@@ -115,4 +132,90 @@ func TestSearch_RenderCountHTML(t *testing.T) {
 
 		assert.Equal(t, res.RenderCountHTML(), test.Output)
 	}
+}
+
+func TestSearch_ParseQuery(t *testing.T) {
+	res := new(Results)
+
+	tests := []struct {
+		Input  string
+		Output []string
+	}{
+		{
+			"hello world",
+			[]string{"hello", "world"},
+		},
+		{
+			"doubled-barreled word",
+			[]string{"doubled-barreled", "word"},
+		},
+		{
+			"",
+			[]string{""},
+		},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, res.ParseQuery(test.Input), test.Output)
+	}
+}
+
+func TestSearch_Search(t *testing.T) {
+	defer db.TearDbDown(_testConn)
+
+	d := db.Document{
+		Title:   "Examples, Examples Everywhere",
+		Content: "This is an example of some example content remember though it's just an example",
+		Site:    "example.com",
+	}
+	d.GenerateID("example.com/about/")
+
+	if err := d.Put(_testConn); err != nil {
+		t.Log(err.Error())
+	}
+
+	i := index.Index(d.Content, d.DocID)
+
+	if err := i.Put(_testConn); err != nil {
+		t.Log(err.Error())
+	}
+
+	res := new(Results)
+	err := res.Search("exampl", _testConn)
+
+	assert.NoError(t, err)
+	assert.Equal(t, len(res.Results), 1)
+}
+
+func TestSearch_Search_NoIndexRaisesError(t *testing.T) {
+	defer db.TearDbDown(_testConn)
+
+	d := db.Document{
+		Title:   "Examples, Examples Everywhere",
+		Content: "This is an example of some example content remember though it's just an example",
+		Site:    "example.com",
+	}
+	d.GenerateID("example.com/about/")
+
+	if err := d.Put(_testConn); err != nil {
+		t.Log(err.Error())
+	}
+
+	i := index.Index(d.Content, d.DocID)
+
+	if err := i.Put(_testConn); err != nil {
+		t.Log(err.Error())
+	}
+
+	// Remove index
+	rdb.Db(db.Database).Table(db.IndexTable).IndexDrop("word").Exec(_testConn.Session)
+
+	res := new(Results)
+	err := res.Search("exampl", _testConn)
+
+	assert.Error(t, err)
+	assert.Equal(t, len(res.Results), 0)
+
+	// Re-add index
+	rdb.Db(db.Database).Table(db.IndexTable).IndexCreate("word").Exec(_testConn.Session)
 }
