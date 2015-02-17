@@ -2,13 +2,14 @@ package db
 
 import (
 	"log"
+	"os"
 
 	rdb "github.com/dancannon/gorethink"
 )
 
 func init() {
 	var err error
-	TestConn, err = NewConnection("test", "localhost:28015")
+	TestConn, err = NewConnection("test", os.Getenv("RETHINKDB_URL"))
 	if err != nil {
 		log.Fatalln("Could not create a connection for testing. Exiting.")
 	}
