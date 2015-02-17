@@ -27,3 +27,10 @@ build:
         name: go test
         code: |
           go test -v ./...
+
+    # Code coverage
+    - script:
+        name: go coverage
+        code: |
+            go get github.com/mattn/goveralls
+            goveralls -service=wercker.com -repotoken $COVERALLS_TOKEN" ./coverage.sh
