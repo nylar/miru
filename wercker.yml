@@ -35,4 +35,4 @@ build:
             export PATH=$PATH:$GOPATH/bin
             go get github.com/axw/gocov/gocov
             go get github.com/mattn/goveralls
-            goveralls -service=wercker.com -repotoken $COVERALLS_TOKEN ./coverage.sh
+            $WERCKER_SOURCE_DIR/coverage.sh
