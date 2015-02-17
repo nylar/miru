@@ -33,4 +33,4 @@ build:
         name: go coverage
         code: |
             go get github.com/mattn/goveralls
-            goveralls -service=wercker.com -repotoken $COVERALLS_TOKEN" ./coverage.sh
+            goveralls -service=wercker.com -repotoken $COVERALLS_TOKEN ./coverage.sh
