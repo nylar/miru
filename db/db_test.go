@@ -1,13 +1,14 @@
 package db
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDb_NewConnection(t *testing.T) {
-	host := "localhost:28015"
+	host := os.Getenv("RETHINKDB_URL")
 	db := "test"
 
 	conn, err := NewConnection(db, host)
