@@ -221,10 +221,7 @@ func RemoveDuplicates(i db.Indexes) db.Indexes {
 	return finalResults
 }
 
-func Index(text, docID string) db.Indexes {
-	indexes := db.Indexes{}
-	words := strings.Fields(text)
-
+func processText(words []string, docID string, c chan *db.Index) {
 	for _, word := range words {
 		word = Normalise(word)
 		if word == "" {
@@ -233,7 +230,20 @@ func Index(text, docID string) db.Indexes {
 
 		index := db.NewIndex(docID, word, 1)
 		index.GenerateID(docID, word)
-		indexes = append(indexes, index)
+		c <- index
+	}
+	close(c)
+}
+
+func Index(text, docID string) db.Indexes {
+	indexes := db.Indexes{}
+	words := strings.Fields(text)
+
+	c := make(chan *db.Index, len(words))
+
+	processText(words, docID, c)
+	for i := range c {
+		indexes = append(indexes, i)
 	}
 
 	return RemoveDuplicates(indexes)
