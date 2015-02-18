@@ -1,0 +1,10 @@
+[database]
+host = "localhost:28015"
+db = "miru"
+
+[tables]
+index = "indexes"
+document = "documents"
+
+[api]
+port = "8036"
