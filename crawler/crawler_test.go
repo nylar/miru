@@ -1,13 +1,29 @@
 package crawler
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+	rdb "github.com/dancannon/gorethink"
+	"github.com/nylar/miru/db"
 	"github.com/stretchr/testify/assert"
 )
+
+var _testConn *db.Connection
+
+func init() {
+	var err error
+	_testConn, err = db.NewConnection("test", os.Getenv("RETHINKDB_URL"))
+	if err != nil {
+		log.Fatalln("Could not create a connection for testing. Exiting.")
+	}
+
+	db.SetDbUp(_testConn, "crawler")
+}
 
 func Handler(status int, data []byte) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -31,13 +47,13 @@ func TestCrawler_getDocument_BadResponse(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestCrawler_NewDocument(t *testing.T) {
+func TestCrawler_newDocument(t *testing.T) {
 	html := []byte(`<html><body><p>Hello, World!</p></body></html>`)
-	doc := NewDocument(html)
+	doc := newDocument(html)
 	assert.IsType(t, new(goquery.Document), doc)
 }
 
-func TestCrawler_NewDocument_StripsUnwantedTags(t *testing.T) {
+func TestCrawler_newDocument_StripsUnwantedTags(t *testing.T) {
 	html := []byte(`
 <!DOCTYPE html>
 <html>
@@ -58,7 +74,7 @@ func TestCrawler_NewDocument_StripsUnwantedTags(t *testing.T) {
 </body>
 </html>`)
 
-	doc := NewDocument(html)
+	doc := newDocument(html)
 	js := doc.Find("script")
 	css := doc.Find("style")
 	p := doc.Find("p")
@@ -69,4 +85,40 @@ func TestCrawler_NewDocument_StripsUnwantedTags(t *testing.T) {
 
 	// Everything else should be left as is.
 	assert.Equal(t, p.Length(), 1)
+}
+
+func TestCrawler_Crawl(t *testing.T) {
+	defer db.TearDbDown(_testConn)
+
+	data := []byte(`
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Example</title>
+</head>
+
+<body>
+    <p>Here are some examples</p>
+</body>
+</html>`)
+	ts := Handler(200, data)
+	defer ts.Close()
+
+	err := Crawl(ts.URL, _testConn)
+	assert.NoError(t, err)
+
+	var response []interface{}
+	res, err := rdb.Db(db.Database).Table(db.IndexTable).Run(_testConn.Session)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	res.All(&response)
+
+	assert.Equal(t, len(response), 1)
+}
+
+func TestCrawler_Crawl_BadURL(t *testing.T) {
+	err := Crawl("", _testConn)
+	assert.Error(t, err)
 }

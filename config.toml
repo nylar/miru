@@ -1,6 +1,6 @@
 [database]
 host = "localhost:28015"
-db = "miru"
+name = "miru"
 
 [tables]
 index = "indexes"

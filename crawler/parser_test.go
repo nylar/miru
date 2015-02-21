@@ -16,7 +16,7 @@ func TestParser_ExtractTitleFromTitle(t *testing.T) {
 <body></body>
 </html>`)
 
-	doc := NewDocument(html)
+	doc := newDocument(html)
 
 	title := ExtractTitle(doc)
 
@@ -33,7 +33,7 @@ func TestParser_ExtractTitleFromHeading1(t *testing.T) {
 </body>
 </html>`)
 
-	doc := NewDocument(html)
+	doc := newDocument(html)
 
 	title := ExtractTitle(doc)
 
@@ -52,7 +52,7 @@ func TestParse_ExtractTitlePrecendence(t *testing.T) {
 </body>
 </html>`)
 
-	doc := NewDocument(html)
+	doc := newDocument(html)
 
 	title := ExtractTitle(doc)
 
@@ -64,7 +64,7 @@ func TestParse_ExtractTitlePrecendence(t *testing.T) {
 func TestParser_ExtractTitleEmpty(t *testing.T) {
 	html := []byte(`<!DOCTYPE html><html><head></head><body></body></html>`)
 
-	doc := NewDocument(html)
+	doc := newDocument(html)
 
 	title := ExtractTitle(doc)
 
@@ -72,20 +72,20 @@ func TestParser_ExtractTitleEmpty(t *testing.T) {
 }
 
 func TestParser_ExtractTextEmpty(t *testing.T) {
-	doc := NewDocument([]byte(""))
+	doc := newDocument([]byte(""))
 	text := ExtractText(doc)
 	assert.Equal(t, "", text)
 }
 
 func TestParser_ExtractTextFromPTags(t *testing.T) {
 	html := []byte(`<p>I am text one.</p><p>I am text two.</p>`)
-	doc := NewDocument(html)
+	doc := newDocument(html)
 	text := ExtractText(doc)
 	assert.Equal(t, "I am text one.\nI am text two.", text)
 }
 
 func TestParser_ExtractLinks_Empty(t *testing.T) {
-	doc := NewDocument([]byte{})
+	doc := newDocument([]byte{})
 	q := NewQueue()
 
 	ExtractLinks(doc, q)
@@ -101,7 +101,7 @@ func TestParser_ExtractLinks_Valid(t *testing.T) {
 	<a href="http://example.org/2">Link 2</a>
 </p>`)
 
-	doc := NewDocument(htmlSoup)
+	doc := newDocument(htmlSoup)
 	q := NewQueue()
 
 	ExtractLinks(doc, q)
@@ -113,7 +113,7 @@ func TestParser_ExtractLinks_Invalid(t *testing.T) {
 	// This should return an error but html.Parse doesn't seem to care.
 	invalidHTML := []byte(`<html><body><aef<eqf>>>qq></body></ht>`)
 
-	doc := NewDocument(invalidHTML)
+	doc := newDocument(invalidHTML)
 	q := NewQueue()
 	ExtractLinks(doc, q)
 
@@ -129,7 +129,7 @@ func TestParser_ExtractLinks_NoDuplicates(t *testing.T) {
 	<a href="http://example.org/1">Link 1</a>
 </p>`)
 
-	doc := NewDocument(htmlWithDupes)
+	doc := newDocument(htmlWithDupes)
 	q := NewQueue()
 
 	ExtractLinks(doc, q)

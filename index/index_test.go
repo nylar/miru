@@ -1,8 +1,6 @@
 package index
 
 import (
-	"encoding/base64"
-	"fmt"
 	"testing"
 
 	"github.com/nylar/miru/db"
@@ -96,11 +94,10 @@ func TestIndex_Index(t *testing.T) {
 
 	for x, test := range tests {
 		i := Index(test.Input, docID)
-		id := fmt.Sprintf("%s::%s", docID, i[x].Word)
 
-		assert.Equal(
+		assert.NotEqual(
 			t,
-			base64.StdEncoding.EncodeToString([]byte(id)),
+			"",
 			i[x].IndexID,
 		)
 		assert.Equal(t, len(test.Output), len(i))

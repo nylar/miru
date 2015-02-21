@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>                                                                                   
+        <title>Add Site</title>
+        <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+    </head>
+
+    <body>
+    <h1>Add Site</h1>
+        <form method="POST">
+        {{if .Posted}}
+            <div class="alert">
+            {{if .Successful}}
+                <p class="success">Successfully crawled<br /><br />{{.Url}}</p>
+            {{else}}
+                <p class="failure">Failed to crawl<br /><br />{{.Url}}</p>
+            {{end}}
+            </div>
+        {{end}}
+            <label for="id_url">
+                <strong>Site URL</strong>
+                <input type="url" name="url" id="id_url" placeholder="http://example.com" required/>
+            </label>
+
+            <label for="id_only_internal">
+                <strong>Links to follow</strong>
+                <input type="radio" name="only_internal" value="true" id="id_only_internal_0" checked="checked"> Internal only
+                <input type="radio" name="only_internal" value="false" id="id_only_internal_1"> Internal &amp; External
+            </label>
+            <div class="submit">
+                <button>Add Site</button>
+            </div>
+        </form>
+    </body>
+</html>

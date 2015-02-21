@@ -163,12 +163,12 @@ func TestSearch_ParseQuery(t *testing.T) {
 func TestSearch_Search(t *testing.T) {
 	defer db.TearDbDown(_testConn)
 
-	d := db.Document{
-		Title:   "Examples, Examples Everywhere",
-		Content: "This is an example of some example content remember though it's just an example",
-		Site:    "example.com",
-	}
-	d.GenerateID("example.com/about/")
+	d := db.NewDocument(
+		"example.com/about/",
+		"example.com",
+		"Examples, Examples Everywhere",
+		"This is an example of some example content remember though it's just an example",
+	)
 
 	if err := d.Put(_testConn); err != nil {
 		t.Log(err.Error())
@@ -190,12 +190,12 @@ func TestSearch_Search(t *testing.T) {
 func TestSearch_Search_NoIndexRaisesError(t *testing.T) {
 	defer db.TearDbDown(_testConn)
 
-	d := db.Document{
-		Title:   "Examples, Examples Everywhere",
-		Content: "This is an example of some example content remember though it's just an example",
-		Site:    "example.com",
-	}
-	d.GenerateID("example.com/about/")
+	d := db.NewDocument(
+		"example.com/about/",
+		"example.com",
+		"Examples, Examples Everywhere",
+		"This is an example of some example content remember though it's just an example",
+	)
 
 	if err := d.Put(_testConn); err != nil {
 		t.Log(err.Error())

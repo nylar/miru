@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/index"
 )
 
 var (
@@ -31,9 +33,26 @@ func getDocument(url string) ([]byte, error) {
 	return data, nil
 }
 
-func NewDocument(document []byte) *goquery.Document {
+func newDocument(document []byte) *goquery.Document {
 	doc, _ := goquery.NewDocumentFromReader(bytes.NewReader(document))
 	doc.Find(UnwantedTags).Remove()
 
 	return doc
+}
+
+func Crawl(url string, conn *db.Connection) error {
+	data, err := getDocument(url)
+	if err != nil {
+		return err
+	}
+
+	doc := newDocument(data)
+	document := db.NewDocument(url, url, ExtractTitle(doc), ExtractText(doc))
+	document.Put(conn)
+
+	i := index.Index(document.Content, document.DocID)
+
+	i.Put(conn)
+
+	return nil
 }

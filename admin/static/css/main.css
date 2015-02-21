@@ -1,0 +1,189 @@
+/**
+* html5doctor.com Reset Stylesheet v1.6.1 (http://html5doctor.com/html-5-reset-stylesheet/)
+* Richard Clark (http://richclarkdesign.com)
+* http://cssreset.com
+*/
+html, body, div, span, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+abbr, address, cite, code,
+del, dfn, em, img, ins, kbd, q, samp,
+small, strong, sub, sup, var,
+b, i,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    background: transparent;
+}
+body {
+    line-height: 1;
+}
+article,aside,details,figcaption,figure,
+footer,header,hgroup,menu,nav,section {
+    display: block;
+}
+nav ul {
+    list-style: none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after,
+    q:before, q:after {
+    content: '';
+    content: none;
+}
+a {
+    margin: 0;
+    padding: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    background: transparent;
+}
+/* change colours to suit your needs */
+ins {
+    background-color: #ff9;
+    color: #000;
+    text-decoration: none;
+}
+/* change colours to suit your needs */
+mark {
+    background-color: #ff9;
+    color: #000;
+    font-style: italic;
+    font-weight: bold;
+}
+del {
+    text-decoration: line-through;
+}
+abbr[title], dfn[title] {
+    border-bottom: 1px dotted;
+    cursor: help;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+/* change border colour to suit your needs */
+hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px solid #cccccc;
+    margin: 1em 0;
+    padding: 0;
+}
+input, select {
+    vertical-align: middle;
+}
+
+body {
+    font-family: "Avenir Next", helvetica, sans-serif;
+    font-size: 14px;
+}
+
+
+h1 {
+    background: #6A5AA0;
+    font-weight: 500;
+    font-size: 18px;
+    text-align: center;
+    color: white;
+    padding: 31px 0;
+}
+
+form, .wrap {
+    padding: 70px 0;
+    margin: 0 auto;
+    width: 500px;
+}
+
+form label {
+    color: #75727F;
+    display: block;
+    margin-bottom: 50px;
+}
+
+form label strong {
+    color: #342E46;
+    display: block;
+    font-weight: 500;
+    margin-bottom: 30px;
+}
+
+form .submit {
+    border-top: 1px solid #E9E9E9;
+    padding-top: 30px;
+}
+
+form button {
+    background: white;
+    border: 2px solid #6A5AA0;
+    color: #6A5AA0;
+    border-radius: 3px;
+    font-size: 14px;
+    padding: 15px 49px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.4s background, 0.4s color;
+}
+
+form button:hover {
+    background: #6A5AA0;
+    color: white;
+    transition: 0.4s background, 0.4s color;
+}
+
+form button:active {
+    background: #40346A;
+    border: 2px solid #40346A;
+    transition: 0.4s background, 0.4s border;
+}
+
+form input[type="url"] {
+    border: 1px solid #D2D2D2;
+    border-radius: 3px;
+    padding: 13px 15px;
+    width: 100%;
+    transition: 0.4s border, 0.4s box-shadow;
+}
+
+form input[type="url"]:hover {
+    border: 1px solid #A4A4A4;
+    transition: 0.4s border, 0.4s box-shadow;
+}
+
+form input[type="url"]:focus {
+    border: 1px solid #6A5AA0;
+    transition: 0.4s border, 0.4s box-shadow;
+    box-shadow: 0px 0px 3px 0px #D1C9EE;
+    border-radius: 3px;
+}
+
+.alert {
+    color: white;
+    text-align: center;
+    margin-bottom: 50px;
+    width: 500px;
+}
+.success {
+    border-radius: 3px;
+    display: block;
+    padding: 20px;
+    background: #748F3C;
+}
+
+.failure {
+    border-radius: 3px;
+    display: block;
+    padding: 20px;
+    background: #BC5020;
+}

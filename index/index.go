@@ -229,7 +229,7 @@ func processText(words []string, docID string, c chan *db.Index) {
 		}
 
 		index := db.NewIndex(docID, word, 1)
-		index.GenerateID(docID, word)
+
 		c <- index
 	}
 	close(c)

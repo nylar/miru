@@ -8,6 +8,7 @@ import (
 
 	rdb "github.com/dancannon/gorethink"
 	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/index"
 )
 
 type Result struct {
@@ -16,9 +17,9 @@ type Result struct {
 }
 
 type Results struct {
-	Speed   float64
-	Count   int64
-	Results []Result
+	Speed   float64  `json:"speed"`
+	Count   int64    `json:"count"`
+	Results []Result `json:"results"`
 }
 
 func (rxs *Results) RenderSpeed() string {
@@ -40,6 +41,8 @@ func (rxs *Results) RenderCountHTML() template.HTML {
 func (rxs *Results) Search(query string, conn *db.Connection) error {
 	start := time.Now()
 
+	query = index.Normalise(query)
+
 	keywords := rxs.ParseQuery(query)
 	results, err := rdb.Db(
 		db.Database).Table(
@@ -56,6 +59,8 @@ func (rxs *Results) Search(query string, conn *db.Connection) error {
 
 	t := time.Since(start).Seconds()
 	rxs.Speed = t
+
+	rxs.Count = int64(len(rxs.Results))
 
 	return nil
 }

@@ -1,7 +1,6 @@
 package db
 
 import (
-	"encoding/base64"
 	"testing"
 
 	rdb "github.com/dancannon/gorethink"
@@ -16,7 +15,7 @@ func TestModels_NewDocument(t *testing.T) {
 	doc := NewDocument(source, url, title, content)
 
 	assert.IsType(t, doc, new(Document))
-	assert.Equal(t, doc.DocID, base64.StdEncoding.EncodeToString([]byte(source)))
+	assert.NotEqual(t, doc.DocID, "")
 	assert.Equal(t, doc.Site, url)
 	assert.Equal(t, doc.Title, title)
 	assert.Equal(t, doc.Content, content)
@@ -37,7 +36,7 @@ func TestModels_DocumentPut(t *testing.T) {
 	err = res.One(&d)
 	assert.NoError(t, err)
 
-	assert.Equal(t, d.DocID, base64.StdEncoding.EncodeToString([]byte("example.com/about/")))
+	assert.NotEqual(t, d.DocID, "")
 }
 
 func TestModels_DocumentPut_Duplicate(t *testing.T) {
@@ -45,6 +44,9 @@ func TestModels_DocumentPut_Duplicate(t *testing.T) {
 
 	doc := NewDocument("example.com/about/", "example.com", "", "")
 	doc2 := NewDocument("example.com/about/", "example.com", "", "")
+
+	doc.DocID = "1"
+	doc2.DocID = "1"
 
 	err := doc.Put(_testConn)
 	assert.NoError(t, err)
@@ -64,18 +66,13 @@ func TestModels_NewIndex(t *testing.T) {
 	assert.Equal(t, index.DocID, doc)
 	assert.Equal(t, index.Word, word)
 	assert.Equal(t, index.Count, count)
-	assert.Equal(t, index.IndexID, base64.StdEncoding.EncodeToString([]byte("example.com/about/::make")))
+	assert.NotEqual(t, index.IndexID, "")
 }
 
 func TestModels_IndexPut(t *testing.T) {
 	defer TearDbDown(_testConn)
 
-	index := Index{
-		DocID: "example.com/about/",
-		Word:  "make",
-		Count: 52,
-	}
-	index.GenerateID(index.DocID, index.Word)
+	index := NewIndex("example.com/about/", "make", 52)
 
 	err := index.Put(_testConn)
 	assert.NoError(t, err)
@@ -87,14 +84,17 @@ func TestModels_IndexPut(t *testing.T) {
 	err = res.One(&i)
 	assert.NoError(t, err)
 
-	assert.Equal(t, i.IndexID, base64.StdEncoding.EncodeToString([]byte("example.com/about/::make")))
+	assert.Equal(t, i.Word, "make")
 }
 
 func TestModels_IndexPut_Duplicate(t *testing.T) {
 	defer TearDbDown(_testConn)
 
-	index := Index{DocID: "ZXhhbXBsZS5jb20vYWJvdXQv", Word: "make"}
-	index2 := Index{DocID: "ZXhhbXBsZS5jb20vYWJvdXQv", Word: "make"}
+	index := NewIndex("ZXhhbXBsZS5jb20vYWJvdXQv", "make", 52)
+	index2 := NewIndex("ZXhhbXBsZS5jb20vYWJvdXQv", "make", 52)
+
+	index.IndexID = "1"
+	index2.IndexID = "1"
 
 	err := index.Put(_testConn)
 	assert.NoError(t, err)
@@ -121,11 +121,11 @@ func TestModels_IndexesPut(t *testing.T) {
 func TestModels_IndexesPut_Duplicate(t *testing.T) {
 	indexes := Indexes{
 		{
-			IndexID: "example.com/about/::hello",
+			IndexID: "1",
 			Word:    "hello",
 		},
 		{
-			IndexID: "example.com/about/::hello",
+			IndexID: "1",
 			Word:    "hello",
 		},
 	}

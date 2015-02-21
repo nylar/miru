@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func RenderJSON(data map[string]interface{}, w http.ResponseWriter) error {
+func RenderJSON(data interface{}, w http.ResponseWriter) error {
 	j, err := json.Marshal(data)
 	if err != nil {
 		return err
