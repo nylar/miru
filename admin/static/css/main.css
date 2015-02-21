@@ -91,19 +91,36 @@ body {
 }
 
 
-h1 {
-    background: #6A5AA0;
-    font-weight: 500;
-    font-size: 18px;
-    text-align: center;
-    color: white;
-    padding: 31px 0;
+nav {
+    background: #2C2544;
+    padding: 23px 0px;
 }
 
-form, .wrap {
-    padding: 70px 0;
+nav ul li {
+    display: inline;
+    padding-right: 30px;
+}
+
+nav ul li a {
+    color: #9188AF;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    color: #A8A0C2;
+}
+
+nav ul li a.active {
+    color: white;
+}
+
+.wrap {
     margin: 0 auto;
-    width: 500px;
+    width: 800px;
+}
+
+form {
+    padding: 70px 0;
 }
 
 form label {
@@ -125,27 +142,21 @@ form .submit {
 }
 
 form button {
-    background: white;
-    border: 2px solid #6A5AA0;
-    color: #6A5AA0;
+    background: #6A5AA0;
+    color: white;
+    transition: 0.4s background;
     border-radius: 3px;
     font-size: 14px;
     padding: 15px 49px;
     cursor: pointer;
     font-weight: 500;
-    transition: 0.4s background, 0.4s color;
+    border: none;
+    transition: 0.4s background;
 }
 
 form button:hover {
-    background: #6A5AA0;
-    color: white;
-    transition: 0.4s background, 0.4s color;
-}
-
-form button:active {
     background: #40346A;
-    border: 2px solid #40346A;
-    transition: 0.4s background, 0.4s border;
+    transition: 0.4s background;
 }
 
 form input[type="url"] {
@@ -172,7 +183,7 @@ form input[type="url"]:focus {
     color: white;
     text-align: center;
     margin-bottom: 50px;
-    width: 500px;
+    width: 100%;
 }
 .success {
     border-radius: 3px;

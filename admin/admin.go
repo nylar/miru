@@ -38,9 +38,9 @@ func AdminAddSiteHandler(conn *db.Connection) http.Handler {
 			}
 		}
 
-		templateBox, _ := rice.FindBox("templates")
+		templateBox := rice.MustFindBox("templates")
 
-		index, _ := templateBox.String("index.html")
+		index := templateBox.MustString("index.html")
 
 		t := template.New("index")
 		tmpl := template.Must(t.Parse(index))

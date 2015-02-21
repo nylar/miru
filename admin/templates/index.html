@@ -6,8 +6,13 @@
     </head>
 
     <body>
-    <h1>Add Site</h1>
-        <form method="POST">
+        <nav>
+            <ul class="wrap">
+                <li><a href="/admin/" class="active">Add Site</a></li>
+                <li><a href="/admin/queue/">Queue</a></li>
+            </ul>
+        </nav>
+        <form method="POST" class="wrap">
         {{if .Posted}}
             <div class="alert">
             {{if .Successful}}
