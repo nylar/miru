@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -36,7 +35,7 @@ func Handler(status int, data []byte) *httptest.Server {
 }
 
 func TestAPI_Routes(t *testing.T) {
-	urls := []string{"/api/", "/api/search/?q=a", "/api/crawl/?url=x"}
+	urls := []string{"/api/search?q=a", "/api/crawl?url=x"}
 
 	m := mux.NewRouter()
 	m.StrictSlash(true)
@@ -53,21 +52,8 @@ func TestAPI_Routes(t *testing.T) {
 
 		m.ServeHTTP(w, r)
 
-		assert.Equal(t, w.Code, 200)
+		assert.Equal(t, 200, w.Code)
 	}
-}
-
-func TestAPI_RootHandler(t *testing.T) {
-	r, err := http.NewRequest("GET", "/api/", nil)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	w := httptest.NewRecorder()
-	APIRootHandler(w, r)
-
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, w.Body.String(), "API")
 }
 
 func TestAPI_CrawlHandler(t *testing.T) {
@@ -87,7 +73,11 @@ func TestAPI_CrawlHandler(t *testing.T) {
 	ts := Handler(200, data)
 	defer ts.Close()
 
-	r, err := http.NewRequest("GET", fmt.Sprintf("/api/crawl?url=%s", url.QueryEscape(ts.URL)), nil)
+	r, err := http.NewRequest(
+		"GET",
+		"/api/crawl?url="+url.QueryEscape(ts.URL),
+		nil,
+	)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -97,7 +87,11 @@ func TestAPI_CrawlHandler(t *testing.T) {
 	h.ServeHTTP(w, r)
 
 	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, w.Body.String(), fmt.Sprintf(`{"response":"Successfully crawled: %s"}`, ts.URL))
+	assert.Equal(
+		t,
+		"{\"status\":200,\"message\":\"Crawling successful\"}\n",
+		w.Body.String(),
+	)
 
 	var response []interface{}
 	res, err := rdb.Db(db.Database).Table(db.IndexTable).Run(_testConn.Session)
@@ -106,7 +100,7 @@ func TestAPI_CrawlHandler(t *testing.T) {
 	}
 
 	res.All(&response)
-	assert.Equal(t, len(response), 4)
+	assert.Equal(t, 4, len(response))
 }
 
 func TestAPI_CrawlHandler_BadURL(t *testing.T) {
@@ -119,7 +113,12 @@ func TestAPI_CrawlHandler_BadURL(t *testing.T) {
 	h := APICrawlHandler(_testConn)
 	h.ServeHTTP(w, r)
 
-	assert.Equal(t, 500, w.Code)
+	assert.Equal(t, w.Code, 500)
+	assert.Equal(
+		t,
+		"{\"status\":500,\"message\":\"Crawling failed.\"}\n",
+		w.Body.String(),
+	)
 }
 
 func TestAPI_CrawlHandler_EmptyParameter(t *testing.T) {
@@ -132,8 +131,12 @@ func TestAPI_CrawlHandler_EmptyParameter(t *testing.T) {
 	h := APICrawlHandler(_testConn)
 	h.ServeHTTP(w, r)
 
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, w.Body.String(), `{"error":"URL parameter 'url' was empty."}`)
+	assert.Equal(t, 400, w.Code)
+	assert.Equal(
+		t,
+		w.Body.String(),
+		"{\"status\":400,\"message\":\"URL parameter 'url' was empty.\"}\n",
+	)
 }
 
 func TestAPI_SearchHandler(t *testing.T) {
@@ -153,8 +156,8 @@ func TestAPI_SearchHandler(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	assert.Equal(t, resp["count"], 0)
-	assert.Equal(t, resp["results"], nil)
+	assert.Equal(t, 0, resp["count"])
+	assert.Nil(t, resp["results"])
 }
 
 func TestAPI_SearchHandler_EmptyParameter(t *testing.T) {
@@ -167,8 +170,13 @@ func TestAPI_SearchHandler_EmptyParameter(t *testing.T) {
 	h := APISearchHandler(_testConn)
 	h.ServeHTTP(w, r)
 
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, w.Body.String(), `{"error":"Query parameter 'q' was empty."}`)
+	assert.Equal(t, 400, w.Code)
+	assert.Equal(
+		t,
+		"{\"status\":400,\"message\":\"Query parameter 'q' was empty.\"}\n",
+		w.Body.String(),
+	)
+
 }
 
 func TestAPI_SearchHandler_RaisesError(t *testing.T) {
@@ -185,6 +193,7 @@ func TestAPI_SearchHandler_RaisesError(t *testing.T) {
 	h.ServeHTTP(w, r)
 
 	assert.Equal(t, 500, w.Code)
+	assert.Equal(t, "{\"status\":500,\"message\":\"Search failed.\"}\n", w.Body.String())
 
 	// Re-add index
 	rdb.Db(db.Database).Table(db.IndexTable).IndexCreate("word").Exec(_testConn.Session)
