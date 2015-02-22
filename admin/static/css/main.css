@@ -186,14 +186,12 @@ form input[type="url"]:focus {
     width: 100%;
 }
 .success {
-    border-radius: 3px;
     display: block;
     padding: 20px;
     background: #748F3C;
 }
 
 .failure {
-    border-radius: 3px;
     display: block;
     padding: 20px;
     background: #BC5020;

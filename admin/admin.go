@@ -13,37 +13,45 @@ import (
 func AdminRoutes(m *mux.Router, conn *db.Connection) {
 	s := m.PathPrefix("/admin").Subrouter()
 
-	s.Handle("/", AdminAddSiteHandler(conn))
+	s.Handle("/add", NewSiteHandler(conn)).Methods("GET")
+	s.Handle("/add", AddSiteHandler(conn)).Methods("POST")
 }
 
-func AdminAddSiteHandler(conn *db.Connection) http.Handler {
+func NewSiteHandler(conn *db.Connection) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		templateBox := rice.MustFindBox("templates")
+
+		_new := templateBox.MustString("new.html")
+
+		t := template.New("new")
+		tmpl := template.Must(t.Parse(_new))
+
+		tmpl.Execute(w, nil)
+	})
+}
+
+func AddSiteHandler(conn *db.Connection) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := r.FormValue("url")
+
 		ctx := struct {
 			Url        string
 			Successful bool
-			Posted     bool
 		}{
-			"",
+			url,
 			true,
-			false,
 		}
 
-		if r.Method == "POST" {
-			url := r.PostFormValue("url")
-			ctx.Url = url
-			ctx.Posted = true
-
-			if err := crawler.Crawl(url, conn); err != nil {
-				ctx.Successful = false
-			}
+		if err := crawler.Crawl(url, conn); err != nil {
+			ctx.Successful = false
 		}
 
 		templateBox := rice.MustFindBox("templates")
 
-		index := templateBox.MustString("index.html")
+		add := templateBox.MustString("add.html")
 
-		t := template.New("index")
-		tmpl := template.Must(t.Parse(index))
+		t := template.New("add")
+		tmpl := template.Must(t.Parse(add))
 
 		tmpl.Execute(w, ctx)
 	})

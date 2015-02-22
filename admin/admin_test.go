@@ -34,7 +34,7 @@ func Handler(status int, data []byte) *httptest.Server {
 }
 
 func TestAdmin_Routes(t *testing.T) {
-	urls := []string{"/admin/"}
+	urls := []string{"/admin/add"}
 
 	m := mux.NewRouter()
 	m.StrictSlash(true)
@@ -80,27 +80,40 @@ func TestAdmin_AddSiteHandler_Post(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	r, err := http.NewRequest("POST", "/admin/", bytes.NewReader(body))
+	r, err := http.NewRequest("POST", "/admin/add", bytes.NewReader(body))
 	if err != nil {
 		t.Error(err.Error())
 	}
 	defer r.Body.Close()
 
 	w := httptest.NewRecorder()
-	h := AdminAddSiteHandler(_testConn)
+	h := AddSiteHandler(_testConn)
 	h.ServeHTTP(w, r)
 
 	assert.Equal(t, 200, w.Code)
 }
 
 func TestAdmin_AddSiteHandler_Template(t *testing.T) {
-	r, err := http.NewRequest("POST", "/admin/", nil)
+	r, err := http.NewRequest("POST", "/admin/add", nil)
 	if err != nil {
 		t.Error(err.Error())
 	}
 
 	w := httptest.NewRecorder()
-	h := AdminAddSiteHandler(_testConn)
+	h := AddSiteHandler(_testConn)
+	h.ServeHTTP(w, r)
+
+	assert.Equal(t, 200, w.Code)
+}
+
+func TestAdmin_NewSiteHandler_Template(t *testing.T) {
+	r, err := http.NewRequest("GET", "/admin/add", nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	w := httptest.NewRecorder()
+	h := NewSiteHandler(_testConn)
 	h.ServeHTTP(w, r)
 
 	assert.Equal(t, 200, w.Code)

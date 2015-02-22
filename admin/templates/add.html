@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>                                                                                   
+        <title>Add Site</title>
+        <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+    </head>
+
+    <body>
+        <nav>
+            <ul class="wrap">
+                <li><a href="/admin/add/" class="active">Add Site</a></li>
+                <li><a href="/admin/queue/">Queue</a></li>
+            </ul>
+        </nav>
+        <div class="alert">
+        {{if .Successful}}
+            <p class="success">Successfully crawled<br /><br />{{.Url}}</p>
+        {{else}}
+            <p class="failure">Failed to crawl<br /><br />{{.Url}}</p>
+        {{end}}
+        </div>
+    </body>
+</html>
