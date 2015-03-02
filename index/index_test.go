@@ -3,7 +3,7 @@ package index
 import (
 	"testing"
 
-	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,15 +79,15 @@ func TestIndex_Index(t *testing.T) {
 
 	tests := []struct {
 		Input  string
-		Output db.Indexes
+		Output models.Indexes
 	}{
 		{
 			"I am a block of text and I am going to be indexed",
-			db.Indexes{
-				db.NewIndex(docID, "block", 1),
-				db.NewIndex(docID, "text", 1),
-				db.NewIndex(docID, "going", 1),
-				db.NewIndex(docID, "indexed", 1),
+			models.Indexes{
+				models.NewIndex(docID, "block", 1),
+				models.NewIndex(docID, "text", 1),
+				models.NewIndex(docID, "going", 1),
+				models.NewIndex(docID, "indexed", 1),
 			},
 		},
 	}

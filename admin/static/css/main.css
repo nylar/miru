@@ -86,13 +86,13 @@ input, select {
 }
 
 body {
-    font-family: "Avenir Next", helvetica, sans-serif;
-    font-size: 14px;
+    font-family: "Helvetica Neue", helvetica, sans-serif;
+    font-size: 13px;
 }
 
 
 nav {
-    background: #2C2544;
+    background: #6834AE;
     padding: 23px 0px;
 }
 
@@ -102,12 +102,13 @@ nav ul li {
 }
 
 nav ul li a {
-    color: #9188AF;
+    text-shadow: 0px -1px 0px #6834AE;
+    color: #DBCCF0;
     text-decoration: none;
 }
 
 nav ul li a:hover {
-    color: #A8A0C2;
+    color: #C8B7DF;
 }
 
 nav ul li a.active {
@@ -141,30 +142,34 @@ form .submit {
     padding-top: 30px;
 }
 
-form button {
-    background: #6A5AA0;
-    color: white;
-    transition: 0.4s background;
+form button, a.button {
+    color: #6834AE;
     border-radius: 3px;
-    font-size: 14px;
-    padding: 15px 49px;
+    font-size: 13px;
+    padding: 10px 34px;
     cursor: pointer;
-    font-weight: 500;
-    border: none;
-    transition: 0.4s background;
+    background: white;
+    border-radius: 2px;
+    border: 2px solid #6834AE;
+    text-decoration: none;
+    transition: 0.4s border, 0.4s color, 0.4s background;
 }
 
-form button:hover {
-    background: #40346A;
-    transition: 0.4s background;
+form button:hover, a.button:hover {
+    background: #6834AE;
+    border: 2px solid #6834AE;
+    color: white;
+    transition: 0.4s border, 0.4s color, 0.4s background;
 }
 
 form input[type="url"] {
-    border: 1px solid #D2D2D2;
-    border-radius: 3px;
+    border-radius: 2px;
     padding: 13px 15px;
     width: 100%;
-    transition: 0.4s border, 0.4s box-shadow;
+    border-left: 1px solid #DFDFDF;
+    border-right: 1px solid #DFDFDF;
+    border-bottom: 1px solid #DFDFDF;
+    border-top: 1px solid #C6C6C6;
 }
 
 form input[type="url"]:hover {
@@ -182,17 +187,28 @@ form input[type="url"]:focus {
 .alert {
     color: white;
     text-align: center;
-    margin-bottom: 50px;
+    margin: 50px 0;
     width: 100%;
+    text-shadow: 0px 1px 0px rgba(0,0,0,0.3);
+}
+
+.alert span {
+    color: rgba(255,255,255,0.75);
 }
 .success {
     display: block;
     padding: 20px;
     background: #748F3C;
+    border-radius: 3px;
 }
 
 .failure {
     display: block;
     padding: 20px;
     background: #BC5020;
+    border-radius: 3px;
+}
+
+.centre {
+    text-align: center;
 }

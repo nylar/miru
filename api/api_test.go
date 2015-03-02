@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -11,53 +12,55 @@ import (
 
 	rdb "github.com/dancannon/gorethink"
 	"github.com/gorilla/mux"
-	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/app"
+	"github.com/nylar/miru/queue"
+	"github.com/nylar/miru/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
-var _testConn *db.Connection
+var (
+	_ctx *app.Context
+	_pkg = "api"
+
+	_db, _index, _document string
+
+	m = mux.NewRouter().StrictSlash(true)
+)
 
 func init() {
-	var err error
-	_testConn, err = db.NewConnection("test", os.Getenv("RETHINKDB_URL"))
-	if err != nil {
-		log.Fatalln("Could not create a connection for testing. Exiting.")
+	ctx := app.NewContext()
+
+	if err := ctx.LoadConfig("../config.toml"); err != nil {
+		log.Fatalln(err.Error())
 	}
 
-	db.SetDbUp(_testConn, "api")
+	_db = fmt.Sprintf("%s_%s", ctx.Config.Database.Name, "test")
+	_index = fmt.Sprintf("%s_%s", ctx.Config.Tables.Index, _pkg)
+	_document = fmt.Sprintf("%s_%s", ctx.Config.Tables.Document, _pkg)
+
+	ctx.Config.Database.Name = _db
+	ctx.Config.Tables.Index = _index
+	ctx.Config.Tables.Document = _document
+
+	if err := ctx.Connect(os.Getenv("RETHINKDB_URL")); err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	_ctx = ctx
+
+	testutils.SetUp(_ctx, _db, _document, _index)
 }
 
 func Handler(status int, data []byte) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(status)
-		w.Write(data)
-	}))
-}
-
-func TestAPI_Routes(t *testing.T) {
-	urls := []string{"/api/search?q=a", "/api/crawl?url=x"}
-
-	m := mux.NewRouter()
-	m.StrictSlash(true)
-
-	APIRoutes(m, _testConn)
-
-	w := httptest.NewRecorder()
-
-	for _, url := range urls {
-		r, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-
-		m.ServeHTTP(w, r)
-
-		assert.Equal(t, 200, w.Code)
-	}
+	return httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(status)
+			w.Write(data)
+		}))
 }
 
 func TestAPI_CrawlHandler(t *testing.T) {
-	defer db.TearDbDown(_testConn)
+	defer testutils.TearDown(_ctx, _db, _document, _index)
 
 	data := []byte(`
 <!DOCTYPE html>
@@ -83,7 +86,7 @@ func TestAPI_CrawlHandler(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	h := APICrawlHandler(_testConn)
+	h := APICrawlHandler(_ctx)
 	h.ServeHTTP(w, r)
 
 	assert.Equal(t, 200, w.Code)
@@ -94,7 +97,7 @@ func TestAPI_CrawlHandler(t *testing.T) {
 	)
 
 	var response []interface{}
-	res, err := rdb.Db(db.Database).Table(db.IndexTable).Run(_testConn.Session)
+	res, err := rdb.Db(_db).Table(_index).Run(_ctx.Db)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -110,7 +113,7 @@ func TestAPI_CrawlHandler_BadURL(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	h := APICrawlHandler(_testConn)
+	h := APICrawlHandler(_ctx)
 	h.ServeHTTP(w, r)
 
 	assert.Equal(t, w.Code, 500)
@@ -128,7 +131,7 @@ func TestAPI_CrawlHandler_EmptyParameter(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	h := APICrawlHandler(_testConn)
+	h := APICrawlHandler(_ctx)
 	h.ServeHTTP(w, r)
 
 	assert.Equal(t, 400, w.Code)
@@ -146,7 +149,7 @@ func TestAPI_SearchHandler(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	h := APISearchHandler(_testConn)
+	h := APISearchHandler(_ctx)
 	h.ServeHTTP(w, r)
 
 	assert.Equal(t, 200, w.Code)
@@ -167,8 +170,8 @@ func TestAPI_SearchHandler_EmptyParameter(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	h := APISearchHandler(_testConn)
-	h.ServeHTTP(w, r)
+	APIRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
 
 	assert.Equal(t, 400, w.Code)
 	assert.Equal(
@@ -186,15 +189,85 @@ func TestAPI_SearchHandler_RaisesError(t *testing.T) {
 	}
 
 	// Remove index
-	rdb.Db(db.Database).Table(db.IndexTable).IndexDrop("word").Exec(_testConn.Session)
+	rdb.Db(_db).Table(_index).IndexDrop("word").Exec(_ctx.Db)
 
 	w := httptest.NewRecorder()
-	h := APISearchHandler(_testConn)
-	h.ServeHTTP(w, r)
+	APIRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
 
 	assert.Equal(t, 500, w.Code)
-	assert.Equal(t, "{\"status\":500,\"message\":\"Search failed.\"}\n", w.Body.String())
+	assert.Equal(
+		t,
+		"{\"status\":500,\"message\":\"Search failed.\"}\n",
+		w.Body.String(),
+	)
 
 	// Re-add index
-	rdb.Db(db.Database).Table(db.IndexTable).IndexCreate("word").Exec(_testConn.Session)
+	rdb.Db(_db).Table(_index).IndexCreate("word").Exec(_ctx.Db)
+}
+
+func TestAPI_APIQueuesHandler(t *testing.T) {
+	_ctx.Queues = nil
+	_ctx.InitQueues()
+
+	r, err := http.NewRequest("GET", "/api/queues/", nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	w := httptest.NewRecorder()
+	APIRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
+
+	assert.Equal(t, 200, w.Code)
+
+	assert.Equal(t, "{\"queues\":{}}\n", w.Body.String())
+}
+
+func TestAPI_APIQueueHandler(t *testing.T) {
+	_ctx.Queues = nil
+	_ctx.InitQueues()
+
+	q := queue.NewQueue()
+	q.Name = "1"
+	_ctx.Queues.Add(q)
+
+	r, err := http.NewRequest("GET", "/api/queue/"+q.Name, nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	w := httptest.NewRecorder()
+	APIRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
+
+	assert.Equal(t, 200, w.Code)
+
+	assert.Equal(
+		t,
+		"{\"manager\":{},\"items\":null,\"name\":\"1\"}\n",
+		w.Body.String(),
+	)
+}
+
+func TestAPI_APIQueueHandler_InvalidQueue(t *testing.T) {
+	_ctx.Queues = nil
+	_ctx.InitQueues()
+
+	r, err := http.NewRequest("GET", "/api/queue/1", nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	w := httptest.NewRecorder()
+	APIRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
+
+	assert.Equal(t, 400, w.Code)
+
+	assert.Equal(
+		t,
+		"{\"status\":400,\"message\":\"Name provided is not a valid queue.\"}\n",
+		w.Body.String(),
+	)
 }

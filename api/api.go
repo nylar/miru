@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/nylar/miru/app"
 	"github.com/nylar/miru/crawler"
-	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/queue"
 	"github.com/nylar/miru/search"
 )
 
@@ -15,14 +16,16 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-func APIRoutes(m *mux.Router, conn *db.Connection) {
+func APIRoutes(m *mux.Router, c *app.Context) {
 	s := m.PathPrefix("/api").Subrouter()
 
-	s.Handle("/crawl", APICrawlHandler(conn)).Methods("GET")
-	s.Handle("/search", APISearchHandler(conn)).Methods("GET")
+	s.Handle("/queue/{name}", APIQueueHandler(c)).Methods("GET")
+	s.Handle("/queues/", APIQueuesHandler(c)).Methods("GET")
+	s.Handle("/crawl", APICrawlHandler(c)).Methods("GET")
+	s.Handle("/search", APISearchHandler(c)).Methods("GET")
 }
 
-func APISearchHandler(conn *db.Connection) http.Handler {
+func APISearchHandler(c *app.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 
@@ -39,7 +42,7 @@ func APISearchHandler(conn *db.Connection) http.Handler {
 		}
 
 		res := search.Results{}
-		if err := res.Search(query, conn); err != nil {
+		if err := res.Search(query, c); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			encoder.Encode(Response{
 				Status:  http.StatusInternalServerError,
@@ -52,11 +55,13 @@ func APISearchHandler(conn *db.Connection) http.Handler {
 	})
 }
 
-func APICrawlHandler(conn *db.Connection) http.Handler {
+func APICrawlHandler(c *app.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 
 		encoder := json.NewEncoder(w)
+		q := queue.NewQueue()
+		c.Queues.Add(q)
 		url := r.URL.Query().Get("url")
 
 		if len(url) == 0 {
@@ -68,7 +73,7 @@ func APICrawlHandler(conn *db.Connection) http.Handler {
 			return
 		}
 
-		if err := crawler.Crawl(url, conn); err != nil {
+		if err := crawler.Crawl(url, c, q); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			encoder.Encode(Response{
 				Status:  http.StatusInternalServerError,
@@ -81,5 +86,34 @@ func APICrawlHandler(conn *db.Connection) http.Handler {
 			Status:  http.StatusOK,
 			Message: "Crawling successful"},
 		)
+	})
+}
+
+func APIQueuesHandler(c *app.Context) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+
+		encoder := json.NewEncoder(w)
+		encoder.Encode(c.Queues)
+	})
+}
+
+func APIQueueHandler(c *app.Context) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+
+		encoder := json.NewEncoder(w)
+		name := mux.Vars(r)["name"]
+
+		q, ok := c.Queues.Queues[name]
+		if !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			encoder.Encode(Response{
+				Status:  http.StatusBadRequest,
+				Message: "Name provided is not a valid queue.",
+			})
+			return
+		}
+		encoder.Encode(q)
 	})
 }

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>                                                                                   
-        <title>Add Site</title>
+        <title>Queue</title>
         <link rel="stylesheet" type="text/css" href="/static/css/main.css">
     </head>
 
@@ -13,19 +13,9 @@
             </ul>
         </nav>
         <div class="wrap">
-            <div class="alert">
-            {{if .Successful}}
-                <p class="success">Successfully crawled<br /><br /><span>{{.Url}}</span></p>
-            {{else}}
-                <p class="failure">Failed to crawl<br /><br /><span>{{.Url}}</span></p>
-            {{end}}
-            </div>
+            <div id="links">
 
-            {{if .Successful}}
-            <div class="centre">
-                <a href="/admin/queue/{{.QueueName}}" class="button">View Queue</a>
             </div>
-            {{end}}
         </div>
     </body>
 </html>

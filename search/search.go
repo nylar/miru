@@ -7,13 +7,14 @@ import (
 	"time"
 
 	rdb "github.com/dancannon/gorethink"
-	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/app"
 	"github.com/nylar/miru/index"
+	"github.com/nylar/miru/models"
 )
 
 type Result struct {
-	db.Document
-	db.Index
+	models.Document
+	models.Index
 }
 
 type Results struct {
@@ -38,19 +39,19 @@ func (rxs *Results) RenderCountHTML() template.HTML {
 	return template.HTML(rxs.RenderCount())
 }
 
-func (rxs *Results) Search(query string, conn *db.Connection) error {
+func (rxs *Results) Search(query string, c *app.Context) error {
 	start := time.Now()
 
 	query = index.Normalise(query)
 
 	keywords := rxs.ParseQuery(query)
 	results, err := rdb.Db(
-		db.Database).Table(
-		db.IndexTable).GetAllByIndex(
+		c.Config.Database.Name).Table(
+		c.Config.Tables.Index).GetAllByIndex(
 		"word", rdb.Args(keywords)).EqJoin(
-		"doc_id", rdb.Db(db.Database).Table(
-			db.DocumentTable)).Zip().OrderBy(
-		rdb.Desc("count")).Run(conn.Session)
+		"doc_id", rdb.Db(c.Config.Database.Name).Table(
+			c.Config.Tables.Document)).Zip().OrderBy(
+		rdb.Desc("count")).Run(c.Db)
 
 	if err != nil {
 		return err

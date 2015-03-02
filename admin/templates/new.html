@@ -9,19 +9,13 @@
         <nav>
             <ul class="wrap">
                 <li><a href="/admin/add/" class="active">Add Site</a></li>
-                <li><a href="/admin/queue/">Queue</a></li>
+                <li><a href="/admin/queues/">Queues</a></li>
             </ul>
         </nav>
         <form method="POST" class="wrap">
             <label for="id_url">
                 <strong>Site URL</strong>
                 <input type="url" name="url" id="id_url" placeholder="http://example.com" required/>
-            </label>
-
-            <label for="id_only_internal">
-                <strong>Links to follow</strong>
-                <input type="radio" name="only_internal" value="true" id="id_only_internal_0" checked="checked"> Internal only
-                <input type="radio" name="only_internal" value="false" id="id_only_internal_1"> Internal &amp; External
             </label>
             <div class="submit">
                 <button>Add Site</button>

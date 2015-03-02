@@ -1,11 +1,47 @@
-package db
+package models
 
 import (
+	"fmt"
+	"log"
+	"os"
 	"testing"
 
 	rdb "github.com/dancannon/gorethink"
+	"github.com/nylar/miru/app"
+	"github.com/nylar/miru/testutils"
 	"github.com/stretchr/testify/assert"
 )
+
+var (
+	_ctx *app.Context
+	_pkg = "models"
+
+	_db, _index, _document string
+)
+
+func init() {
+	ctx := app.NewContext()
+
+	if err := ctx.LoadConfig("../config.toml"); err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	_db = fmt.Sprintf("%s_%s", ctx.Config.Database.Name, "test")
+	_index = fmt.Sprintf("%s_%s", ctx.Config.Tables.Index, _pkg)
+	_document = fmt.Sprintf("%s_%s", ctx.Config.Tables.Document, _pkg)
+
+	ctx.Config.Database.Name = _db
+	ctx.Config.Tables.Index = _index
+	ctx.Config.Tables.Document = _document
+
+	if err := ctx.Connect(os.Getenv("RETHINKDB_URL")); err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	_ctx = ctx
+
+	testutils.SetUp(_ctx, _db, _document, _index)
+}
 
 func TestModels_NewDocument(t *testing.T) {
 	source := "example.com/about/"
@@ -22,14 +58,19 @@ func TestModels_NewDocument(t *testing.T) {
 }
 
 func TestModels_DocumentPut(t *testing.T) {
-	defer TearDbDown(_testConn)
+	defer testutils.TearDown(_ctx, _db, _document, _index)
 
-	doc := NewDocument("example.com/about/", "example.com", "About Example Inc.", "We make examples and things.")
+	doc := NewDocument(
+		"example.com/about/",
+		"example.com",
+		"About Example Inc.",
+		"We make examples and things.",
+	)
 
-	err := doc.Put(_testConn)
+	err := doc.Put(_ctx)
 	assert.NoError(t, err)
 
-	res, err := rdb.Db(Database).Table(DocumentTable).Get(doc.DocID).Run(_testConn.Session)
+	res, err := rdb.Db(_db).Table(_document).Get(doc.DocID).Run(_ctx.Db)
 	assert.NoError(t, err)
 
 	var d Document
@@ -40,7 +81,7 @@ func TestModels_DocumentPut(t *testing.T) {
 }
 
 func TestModels_DocumentPut_Duplicate(t *testing.T) {
-	defer TearDbDown(_testConn)
+	defer testutils.TearDown(_ctx, _db, _document, _index)
 
 	doc := NewDocument("example.com/about/", "example.com", "", "")
 	doc2 := NewDocument("example.com/about/", "example.com", "", "")
@@ -48,10 +89,10 @@ func TestModels_DocumentPut_Duplicate(t *testing.T) {
 	doc.DocID = "1"
 	doc2.DocID = "1"
 
-	err := doc.Put(_testConn)
+	err := doc.Put(_ctx)
 	assert.NoError(t, err)
 
-	err = doc2.Put(_testConn)
+	err = doc2.Put(_ctx)
 	assert.Error(t, err)
 }
 
@@ -70,14 +111,14 @@ func TestModels_NewIndex(t *testing.T) {
 }
 
 func TestModels_IndexPut(t *testing.T) {
-	defer TearDbDown(_testConn)
+	defer testutils.TearDown(_ctx, _db, _document, _index)
 
 	index := NewIndex("example.com/about/", "make", 52)
 
-	err := index.Put(_testConn)
+	err := index.Put(_ctx)
 	assert.NoError(t, err)
 
-	res, err := rdb.Db(Database).Table(IndexTable).Get(index.IndexID).Run(_testConn.Session)
+	res, err := rdb.Db(_db).Table(_index).Get(index.IndexID).Run(_ctx.Db)
 	assert.NoError(t, err)
 
 	var i Index
@@ -88,7 +129,7 @@ func TestModels_IndexPut(t *testing.T) {
 }
 
 func TestModels_IndexPut_Duplicate(t *testing.T) {
-	defer TearDbDown(_testConn)
+	defer testutils.TearDown(_ctx, _db, _document, _index)
 
 	index := NewIndex("ZXhhbXBsZS5jb20vYWJvdXQv", "make", 52)
 	index2 := NewIndex("ZXhhbXBsZS5jb20vYWJvdXQv", "make", 52)
@@ -96,10 +137,10 @@ func TestModels_IndexPut_Duplicate(t *testing.T) {
 	index.IndexID = "1"
 	index2.IndexID = "1"
 
-	err := index.Put(_testConn)
+	err := index.Put(_ctx)
 	assert.NoError(t, err)
 
-	err = index2.Put(_testConn)
+	err = index2.Put(_ctx)
 	assert.Error(t, err)
 }
 
@@ -114,7 +155,7 @@ func TestModels_IndexesPut(t *testing.T) {
 			Word:    "world",
 		},
 	}
-	err := indexes.Put(_testConn)
+	err := indexes.Put(_ctx)
 	assert.NoError(t, err)
 }
 
@@ -129,6 +170,6 @@ func TestModels_IndexesPut_Duplicate(t *testing.T) {
 			Word:    "hello",
 		},
 	}
-	err := indexes.Put(_testConn)
+	err := indexes.Put(_ctx)
 	assert.Error(t, err)
 }

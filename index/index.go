@@ -3,7 +3,7 @@ package index
 import (
 	"strings"
 
-	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/models"
 	"github.com/reiver/go-porterstemmer"
 )
 
@@ -201,8 +201,8 @@ func Normalise(word string) string {
 	return word
 }
 
-func RemoveDuplicates(i db.Indexes) db.Indexes {
-	result := db.Indexes{}
+func RemoveDuplicates(i models.Indexes) models.Indexes {
+	result := models.Indexes{}
 	seen := map[string]int64{}
 	for _, val := range i {
 		if _, ok := seen[val.Word]; !ok {
@@ -212,7 +212,7 @@ func RemoveDuplicates(i db.Indexes) db.Indexes {
 			seen[val.Word] = seen[val.Word] + 1
 		}
 	}
-	finalResults := db.Indexes{}
+	finalResults := models.Indexes{}
 	for _, res := range result {
 		count := seen[res.Word]
 		res.Count = count
@@ -221,25 +221,25 @@ func RemoveDuplicates(i db.Indexes) db.Indexes {
 	return finalResults
 }
 
-func processText(words []string, docID string, c chan *db.Index) {
+func processText(words []string, docID string, c chan *models.Index) {
 	for _, word := range words {
 		word = Normalise(word)
 		if word == "" {
 			continue
 		}
 
-		index := db.NewIndex(docID, word, 1)
+		index := models.NewIndex(docID, word, 1)
 
 		c <- index
 	}
 	close(c)
 }
 
-func Index(text, docID string) db.Indexes {
-	indexes := db.Indexes{}
+func Index(text, docID string) models.Indexes {
+	indexes := models.Indexes{}
 	words := strings.Fields(text)
 
-	c := make(chan *db.Index, len(words))
+	c := make(chan *models.Index, len(words))
 
 	processText(words, docID, c)
 	for i := range c {

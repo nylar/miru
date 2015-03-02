@@ -3,6 +3,7 @@ package admin
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -10,20 +11,43 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/app"
+	"github.com/nylar/miru/queue"
+	"github.com/nylar/miru/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
-var _testConn *db.Connection
+var (
+	_ctx *app.Context
+	_pkg = "admin"
+
+	_db, _index, _document string
+
+	m = mux.NewRouter().StrictSlash(true)
+)
 
 func init() {
-	var err error
-	_testConn, err = db.NewConnection("test", os.Getenv("RETHINKDB_URL"))
-	if err != nil {
-		log.Fatalln("Could not create a connection for testing. Exiting.")
+	ctx := app.NewContext()
+
+	if err := ctx.LoadConfig("../config.toml"); err != nil {
+		log.Fatalln(err.Error())
 	}
 
-	db.SetDbUp(_testConn, "admin")
+	_db = fmt.Sprintf("%s_%s", ctx.Config.Database.Name, "test")
+	_index = fmt.Sprintf("%s_%s", ctx.Config.Tables.Index, _pkg)
+	_document = fmt.Sprintf("%s_%s", ctx.Config.Tables.Document, _pkg)
+
+	ctx.Config.Database.Name = _db
+	ctx.Config.Tables.Index = _index
+	ctx.Config.Tables.Document = _document
+
+	if err := ctx.Connect(os.Getenv("RETHINKDB_URL")); err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	_ctx = ctx
+
+	testutils.SetUp(_ctx, _db, _document, _index)
 }
 
 func Handler(status int, data []byte) *httptest.Server {
@@ -33,30 +57,8 @@ func Handler(status int, data []byte) *httptest.Server {
 	}))
 }
 
-func TestAdmin_Routes(t *testing.T) {
-	urls := []string{"/admin/add"}
-
-	m := mux.NewRouter()
-	m.StrictSlash(true)
-
-	AdminRoutes(m, _testConn)
-
-	w := httptest.NewRecorder()
-
-	for _, url := range urls {
-		r, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-
-		m.ServeHTTP(w, r)
-
-		assert.Equal(t, w.Code, 200)
-	}
-}
-
 func TestAdmin_AddSiteHandler_Post(t *testing.T) {
-	defer db.TearDbDown(_testConn)
+	defer testutils.TearDown(_ctx, _db, _document, _index)
 
 	data := []byte(`
 <!DOCTYPE html>
@@ -87,8 +89,8 @@ func TestAdmin_AddSiteHandler_Post(t *testing.T) {
 	defer r.Body.Close()
 
 	w := httptest.NewRecorder()
-	h := AddSiteHandler(_testConn)
-	h.ServeHTTP(w, r)
+	AdminRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
 
 	assert.Equal(t, 200, w.Code)
 }
@@ -100,8 +102,8 @@ func TestAdmin_AddSiteHandler_Template(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	h := AddSiteHandler(_testConn)
-	h.ServeHTTP(w, r)
+	AdminRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
 
 	assert.Equal(t, 200, w.Code)
 }
@@ -113,8 +115,60 @@ func TestAdmin_NewSiteHandler_Template(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	h := NewSiteHandler(_testConn)
-	h.ServeHTTP(w, r)
+	AdminRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
 
 	assert.Equal(t, 200, w.Code)
+}
+
+func TestAdmin_QueuesHandler_Template(t *testing.T) {
+	_ctx.Queues = nil
+	_ctx.InitQueues()
+
+	r, err := http.NewRequest("GET", "/admin/queues/", nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	w := httptest.NewRecorder()
+	AdminRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
+
+	assert.Equal(t, 200, w.Code)
+}
+
+func TestAdmin_QueueHandler_Template(t *testing.T) {
+	_ctx.Queues = nil
+	_ctx.InitQueues()
+
+	q := queue.NewQueue()
+	q.Name = "1"
+	_ctx.Queues.Add(q)
+
+	r, err := http.NewRequest("GET", "/admin/queue/1", nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	w := httptest.NewRecorder()
+	AdminRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
+
+	assert.Equal(t, 200, w.Code)
+}
+
+func TestAdmin_QueueHandler_404(t *testing.T) {
+	_ctx.Queues = nil
+	_ctx.InitQueues()
+
+	r, err := http.NewRequest("GET", "/admin/queue/x", nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	w := httptest.NewRecorder()
+	AdminRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
+
+	assert.Equal(t, 404, w.Code)
 }

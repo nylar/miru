@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -9,20 +10,41 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	rdb "github.com/dancannon/gorethink"
-	"github.com/nylar/miru/db"
+	"github.com/nylar/miru/app"
+	"github.com/nylar/miru/queue"
+	"github.com/nylar/miru/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
-var _testConn *db.Connection
+var (
+	_ctx *app.Context
+	_pkg = "crawler"
+
+	_db, _index, _document string
+)
 
 func init() {
-	var err error
-	_testConn, err = db.NewConnection("test", os.Getenv("RETHINKDB_URL"))
-	if err != nil {
-		log.Fatalln("Could not create a connection for testing. Exiting.")
+	ctx := app.NewContext()
+
+	if err := ctx.LoadConfig("../config.toml"); err != nil {
+		log.Fatalln(err.Error())
 	}
 
-	db.SetDbUp(_testConn, "crawler")
+	_db = fmt.Sprintf("%s_%s", ctx.Config.Database.Name, "test")
+	_index = fmt.Sprintf("%s_%s", ctx.Config.Tables.Index, _pkg)
+	_document = fmt.Sprintf("%s_%s", ctx.Config.Tables.Document, _pkg)
+
+	ctx.Config.Database.Name = _db
+	ctx.Config.Tables.Index = _index
+	ctx.Config.Tables.Document = _document
+
+	if err := ctx.Connect(os.Getenv("RETHINKDB_URL")); err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	_ctx = ctx
+
+	testutils.SetUp(_ctx, _db, _document, _index)
 }
 
 func Handler(status int, data []byte) *httptest.Server {
@@ -30,21 +52,6 @@ func Handler(status int, data []byte) *httptest.Server {
 		w.WriteHeader(status)
 		w.Write(data)
 	}))
-}
-
-func TestCrawler_getDocument(t *testing.T) {
-	data := []byte("Hello, World")
-	ts := Handler(200, data)
-	defer ts.Close()
-
-	d, err := getDocument(ts.URL)
-	assert.Equal(t, d, data)
-	assert.NoError(t, err)
-}
-
-func TestCrawler_getDocument_BadResponse(t *testing.T) {
-	_, err := getDocument("")
-	assert.Error(t, err)
 }
 
 func TestCrawler_newDocument(t *testing.T) {
@@ -88,7 +95,7 @@ func TestCrawler_newDocument_StripsUnwantedTags(t *testing.T) {
 }
 
 func TestCrawler_Crawl(t *testing.T) {
-	defer db.TearDbDown(_testConn)
+	defer testutils.TearDown(_ctx, _db, _document, _index)
 
 	data := []byte(`
 <!DOCTYPE html>
@@ -104,11 +111,11 @@ func TestCrawler_Crawl(t *testing.T) {
 	ts := Handler(200, data)
 	defer ts.Close()
 
-	err := Crawl(ts.URL, _testConn)
+	err := Crawl(ts.URL, _ctx, queue.NewQueue())
 	assert.NoError(t, err)
 
 	var response []interface{}
-	res, err := rdb.Db(db.Database).Table(db.IndexTable).Run(_testConn.Session)
+	res, err := rdb.Db(_db).Table(_index).Run(_ctx.Db)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -119,6 +126,118 @@ func TestCrawler_Crawl(t *testing.T) {
 }
 
 func TestCrawler_Crawl_BadURL(t *testing.T) {
-	err := Crawl("", _testConn)
+	err := Crawl("", _ctx, queue.NewQueue())
 	assert.Error(t, err)
+}
+
+func TestCrawler_RootURL(t *testing.T) {
+	root, err := RootURL("http://example.com/about/")
+	assert.Equal(t, "example.com", root)
+	assert.NoError(t, err)
+
+	root, err = RootURL("%")
+	assert.Equal(t, "", root)
+	assert.Error(t, err)
+}
+
+func TestCrawler_RootURL_BadURL(t *testing.T) {
+	err := Crawl("%", _ctx, queue.NewQueue())
+	assert.Error(t, err)
+}
+
+func TestCrawler_Get(t *testing.T) {
+	ts := Handler(200, []byte{})
+	defer ts.Close()
+
+	req, _ := http.NewRequest("GET", ts.URL, nil)
+
+	resp, err := Get(req)
+	assert.NoError(t, err)
+	assert.IsType(t, new(http.Response), resp)
+}
+
+func TestCrawler_Get_EmptyRequest(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/", nil)
+
+	resp, err := Get(req)
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+}
+
+func TestCrawler_MustGet_URLNot200(t *testing.T) {
+	ts := Handler(500, []byte{})
+	defer ts.Close()
+
+	req, _ := http.NewRequest("GET", ts.URL, nil)
+
+	resp, err := MustGet(req)
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+}
+
+func TestCrawler_Contents(t *testing.T) {
+	ts := Handler(200, []byte("hello world"))
+	defer ts.Close()
+
+	req, _ := http.NewRequest("GET", ts.URL, nil)
+
+	resp, err := Get(req)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	contents := Contents(resp)
+	assert.Equal(t, []byte("hello world"), contents)
+}
+
+func TestCrawler_Links(t *testing.T) {
+	site := "example.org"
+	q := queue.NewQueue()
+
+	htmlSoup := []byte(`
+<p>
+    <a href="http://example.org/1">Link 1</a>
+    <br>
+    <a href="http://example.org/2">Link 2</a>
+</p>`)
+
+	doc := newDocument(htmlSoup)
+
+	Links(doc, q, site)
+	assert.Equal(t, 2, len(q.Items))
+}
+
+func TestCrawler_Links_InvalidUrls(t *testing.T) {
+	site := "example.org"
+	q := queue.NewQueue()
+
+	htmlSoup := []byte(`
+<p>
+    <a href="http://example.com/1">Link 1</a>
+    <br>
+    <a href="http://example.com/2">Link 2</a>
+</p>`)
+
+	doc := newDocument(htmlSoup)
+
+	Links(doc, q, site)
+	assert.Equal(t, 0, len(q.Items))
+}
+
+func TestCrawler_ProcessPages(t *testing.T) {
+	defer testutils.TearDown(_ctx, _db, _document, _index)
+
+	ts := Handler(200, []byte(`
+<p>
+    <a href="foo">Link 1</a>
+    <br>
+    <a href="bar">Link 2</a>
+</p>`))
+	defer ts.Close()
+
+	q := queue.NewQueue()
+	err := Crawl(ts.URL, _ctx, q)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, len(q.Manager))
 }

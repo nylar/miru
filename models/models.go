@@ -1,9 +1,10 @@
-package db
+package models
 
 import (
 	"errors"
 
 	rdb "github.com/dancannon/gorethink"
+	"github.com/nylar/miru/app"
 	"github.com/satori/go.uuid"
 )
 
@@ -26,8 +27,10 @@ func NewDocument(url, site, title, content string) *Document {
 	return doc
 }
 
-func (d *Document) Put(conn *Connection) error {
-	res, _ := rdb.Db(Database).Table(DocumentTable).Insert(d).RunWrite(conn.Session)
+func (d *Document) Put(c *app.Context) error {
+	res, _ := rdb.Db(c.Config.Database.Name).Table(
+		c.Config.Tables.Document).Insert(d).RunWrite(c.Db)
+
 	if res.Errors > 0 {
 		return errors.New(res.FirstError)
 	}
@@ -51,8 +54,10 @@ func NewIndex(docID, word string, count int64) *Index {
 	return index
 }
 
-func (i *Index) Put(conn *Connection) error {
-	res, _ := rdb.Db(Database).Table(IndexTable).Insert(i).RunWrite(conn.Session)
+func (i *Index) Put(c *app.Context) error {
+	res, _ := rdb.Db(c.Config.Database.Name).Table(
+		c.Config.Tables.Index).Insert(i).RunWrite(c.Db)
+
 	if res.Errors > 0 {
 		return errors.New(res.FirstError)
 	}
@@ -61,8 +66,10 @@ func (i *Index) Put(conn *Connection) error {
 
 type Indexes []*Index
 
-func (ixs *Indexes) Put(conn *Connection) error {
-	res, _ := rdb.Db(Database).Table(IndexTable).Insert(ixs).RunWrite(conn.Session)
+func (ixs *Indexes) Put(c *app.Context) error {
+	res, _ := rdb.Db(c.Config.Database.Name).Table(
+		c.Config.Tables.Index).Insert(ixs).RunWrite(c.Db)
+
 	if res.Errors > 0 {
 		return errors.New(res.FirstError)
 	}
