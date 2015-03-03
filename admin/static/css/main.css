@@ -92,7 +92,7 @@ body {
 
 
 nav {
-    background: #6834AE;
+    background: #27435F;
     padding: 23px 0px;
 }
 
@@ -102,13 +102,12 @@ nav ul li {
 }
 
 nav ul li a {
-    text-shadow: 0px -1px 0px #6834AE;
-    color: #DBCCF0;
+    color: #A3B5C7;
     text-decoration: none;
 }
 
 nav ul li a:hover {
-    color: #C8B7DF;
+    color: #8EA3B8;
 }
 
 nav ul li a.active {
@@ -143,23 +142,20 @@ form .submit {
 }
 
 form button, a.button {
-    color: #6834AE;
-    border-radius: 3px;
     font-size: 13px;
-    padding: 10px 34px;
+    padding: 14px 34px;
     cursor: pointer;
-    background: white;
-    border-radius: 2px;
-    border: 2px solid #6834AE;
+    border: none;
     text-decoration: none;
-    transition: 0.4s border, 0.4s color, 0.4s background;
+    background: #136DC9;
+    border-radius: 2px;
+    color: white;
+    transition: 0.4s background;
 }
 
 form button:hover, a.button:hover {
-    background: #6834AE;
-    border: 2px solid #6834AE;
-    color: white;
-    transition: 0.4s border, 0.4s color, 0.4s background;
+    background: #0C5FB3;
+    transition: 0.4s background;
 }
 
 form input[type="url"] {
@@ -170,6 +166,7 @@ form input[type="url"] {
     border-right: 1px solid #DFDFDF;
     border-bottom: 1px solid #DFDFDF;
     border-top: 1px solid #C6C6C6;
+    box-sizing: border-box;
 }
 
 form input[type="url"]:hover {
@@ -178,10 +175,8 @@ form input[type="url"]:hover {
 }
 
 form input[type="url"]:focus {
-    border: 1px solid #6A5AA0;
+    border: 1px solid #136DC9;
     transition: 0.4s border, 0.4s box-shadow;
-    box-shadow: 0px 0px 3px 0px #D1C9EE;
-    border-radius: 3px;
 }
 
 .alert {
@@ -189,7 +184,6 @@ form input[type="url"]:focus {
     text-align: center;
     margin: 50px 0;
     width: 100%;
-    text-shadow: 0px 1px 0px rgba(0,0,0,0.3);
 }
 
 .alert span {
