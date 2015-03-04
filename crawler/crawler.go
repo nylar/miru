@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -40,8 +39,6 @@ func IndexPage(c *app.Context, q *queue.Queue, url, site string) error {
 	if err != nil {
 		return err
 	}
-
-	log.Println("Indexing: %s", url)
 
 	contents := Contents(resp)
 
