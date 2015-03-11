@@ -210,6 +210,10 @@ func TestAPI_APIQueuesHandler(t *testing.T) {
 	_ctx.Queues = nil
 	_ctx.InitQueues()
 
+	q := queue.NewQueue()
+	q.Name = "example.com"
+	_ctx.Queues.Add(q)
+
 	r, err := http.NewRequest("GET", "/api/queues/", nil)
 	if err != nil {
 		t.Error(err.Error())
@@ -221,7 +225,11 @@ func TestAPI_APIQueuesHandler(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code)
 
-	assert.Equal(t, "{\"queues\":{}}\n", w.Body.String())
+	assert.Equal(
+		t,
+		"[{\"manager\":{},\"items\":null,\"name\":\"example.com\"}]\n",
+		w.Body.String(),
+	)
 }
 
 func TestAPI_APIQueueHandler(t *testing.T) {

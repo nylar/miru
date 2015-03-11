@@ -3,8 +3,6 @@ package queue
 import (
 	"errors"
 	"sync"
-
-	"github.com/satori/go.uuid"
 )
 
 type Queues struct {
@@ -21,6 +19,14 @@ func NewQueues() *Queues {
 	return qs
 }
 
+type QueueList []*Queue
+
+func (ql QueueList) Len() int { return len(ql) }
+
+func (ql QueueList) Swap(i, j int) { ql[i], ql[j] = ql[j], ql[i] }
+
+func (ql QueueList) Less(i, j int) bool { return ql[i].Name < ql[j].Name }
+
 type Queue struct {
 	Manager map[string]bool `json:"manager"`
 	Items   []string        `json:"items"`
@@ -30,7 +36,6 @@ type Queue struct {
 
 func NewQueue() *Queue {
 	q := new(Queue)
-	q.Name = uuid.NewV4().String()
 	q.Manager = make(map[string]bool)
 
 	return q

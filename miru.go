@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/nylar/miru/admin"
 	"github.com/nylar/miru/api"
 	"github.com/nylar/miru/app"
 )
@@ -29,10 +28,6 @@ func main() {
 	r.StrictSlash(true)
 
 	api.APIRoutes(r, ctx)
-	admin.AdminRoutes(r, ctx)
-
-	fs := http.FileServer(http.Dir("admin/static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	http.Handle("/", r)
 	http.ListenAndServe(fmt.Sprintf(":%s", ctx.Config.Api.Port), nil)

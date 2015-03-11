@@ -2,6 +2,7 @@ package queue
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,7 @@ func TestQueue_NewQueue(t *testing.T) {
 
 	assert.IsType(t, &Queue{}, q)
 	assert.Equal(t, 0, len(q.Items))
-	assert.NotEqual(t, "", q.Name)
+	assert.Equal(t, "", q.Name)
 }
 
 func TestQueue_Len(t *testing.T) {
@@ -53,19 +54,6 @@ func TestQueue_Dequeue(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// func TestQueue_JSON(t *testing.T) {
-//  q := NewQueue()
-//  q.Enqueue("http://example.com/about/")
-//  q.Enqueue("http://example.com/contact/")
-//  q.Enqueue("http://example.com/news/")
-
-//  buf := bytes.NewBuffer([]byte{})
-//  enc := json.NewEncoder(buf)
-//  enc.Encode(q)
-
-//  t.Log(buf.String())
-// }
-
 func TestQueues_NewQueues(t *testing.T) {
 	qs := NewQueues()
 	assert.Equal(t, 0, len(qs.Queues))
@@ -81,27 +69,17 @@ func TestQueues_Add(t *testing.T) {
 	assert.Equal(t, 1, len(qs.Queues))
 }
 
-// func TestQueues_JSON(t *testing.T) {
-//  buf := bytes.NewBuffer([]byte{})
-//  enc := json.NewEncoder(buf)
+func TestQueue_Sort(t *testing.T) {
+	qs := []*Queue{}
 
-//  q := NewQueue()
-//  q.Enqueue("1")
-//  q2 := NewQueue()
-//  q.Enqueue("2")
+	q := NewQueue()
+	q.Name = "google.com"
+	qs = append(qs, q)
 
-//  q.Name = "Queue1"
-//  q2.Name = "Queue2"
+	q2 := NewQueue()
+	q2.Name = "example.com"
+	qs = append(qs, q2)
 
-//  qs := NewQueues()
-//  enc.Encode(qs)
-//  t.Logf("%s\n", buf.String())
-
-//  qs.Add(q)
-//  qs.Add(q2)
-
-//  buf.Reset()
-//  enc.Encode(qs)
-
-//  t.Logf("%s\n", buf.String())
-// }
+	sort.Sort(QueueList(qs))
+	assert.Equal(t, qs, []*Queue{q2, q})
+}

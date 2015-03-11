@@ -3,12 +3,14 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 
 	"github.com/gorilla/mux"
 	"github.com/nylar/miru/app"
 	"github.com/nylar/miru/crawler"
 	"github.com/nylar/miru/queue"
 	"github.com/nylar/miru/search"
+	"github.com/rs/cors"
 )
 
 type Response struct {
@@ -19,10 +21,12 @@ type Response struct {
 func APIRoutes(m *mux.Router, c *app.Context) {
 	s := m.PathPrefix("/api").Subrouter()
 
-	s.Handle("/queue/{name}", APIQueueHandler(c)).Methods("GET")
-	s.Handle("/queues/", APIQueuesHandler(c)).Methods("GET")
-	s.Handle("/crawl", APICrawlHandler(c)).Methods("GET")
-	s.Handle("/search", APISearchHandler(c)).Methods("GET")
+	_c := cors.New(cors.Options{})
+
+	s.Handle("/queue/{name}", _c.Handler(APIQueueHandler(c))).Methods("GET")
+	s.Handle("/queues/", _c.Handler(APIQueuesHandler(c))).Methods("GET")
+	s.Handle("/crawl", _c.Handler(APICrawlHandler(c))).Methods("GET")
+	s.Handle("/search", _c.Handler(APISearchHandler(c))).Methods("GET")
 }
 
 func APISearchHandler(c *app.Context) http.Handler {
@@ -61,7 +65,6 @@ func APICrawlHandler(c *app.Context) http.Handler {
 
 		encoder := json.NewEncoder(w)
 		q := queue.NewQueue()
-		c.Queues.Add(q)
 		url := r.URL.Query().Get("url")
 
 		if len(url) == 0 {
@@ -72,6 +75,9 @@ func APICrawlHandler(c *app.Context) http.Handler {
 			})
 			return
 		}
+
+		q.Name = url
+		c.Queues.Add(q)
 
 		if err := crawler.Crawl(url, c, q); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -93,8 +99,14 @@ func APIQueuesHandler(c *app.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 
+		queues := []*queue.Queue{}
+		for _, q := range c.Queues.Queues {
+			queues = append(queues, q)
+		}
+		sort.Sort(queue.QueueList(queues))
+
 		encoder := json.NewEncoder(w)
-		encoder.Encode(c.Queues)
+		encoder.Encode(queues)
 	})
 }
 
