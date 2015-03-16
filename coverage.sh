@@ -20,7 +20,7 @@ do
 done
 if [ -n "$COVERALLS_TOKEN" ]
 then
-    goveralls -coverprofile=acc.out -service=wercker.com -repotoken $COVERALLS_TOKEN
+    goveralls -coverprofile=acc.out -service=semaphoreci.com -repotoken $COVERALLS_TOKEN
 fi  
 
 rm -rf ./profile.out
