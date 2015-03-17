@@ -1,4 +1,4 @@
-package search
+package miru
 
 import (
 	"fmt"
@@ -7,14 +7,11 @@ import (
 	"time"
 
 	rdb "github.com/dancannon/gorethink"
-	"github.com/nylar/miru/app"
-	"github.com/nylar/miru/index"
-	"github.com/nylar/miru/models"
 )
 
 type Result struct {
-	models.Document
-	models.Index
+	Document
+	Index
 }
 
 type Results struct {
@@ -39,10 +36,10 @@ func (rxs *Results) RenderCountHTML() template.HTML {
 	return template.HTML(rxs.RenderCount())
 }
 
-func (rxs *Results) Search(query string, c *app.Context) error {
+func (rxs *Results) Search(query string, c *Context) error {
 	start := time.Now()
 
-	query = index.Normalise(query)
+	query = Normalise(query)
 
 	keywords := rxs.ParseQuery(query)
 	results, err := rdb.Db(

@@ -1,50 +1,12 @@
-package search
+package miru
 
 import (
-	"fmt"
 	"html/template"
-	"log"
-	"os"
 	"testing"
 
 	rdb "github.com/dancannon/gorethink"
-	"github.com/nylar/miru/app"
-	"github.com/nylar/miru/index"
-	"github.com/nylar/miru/models"
-	"github.com/nylar/miru/testutils"
 	"github.com/stretchr/testify/assert"
 )
-
-var (
-	_ctx *app.Context
-	_pkg = "search"
-
-	_db, _index, _document string
-)
-
-func init() {
-	ctx := app.NewContext()
-
-	if err := ctx.LoadConfig("../config.toml"); err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	_db = fmt.Sprintf("%s_%s", ctx.Config.Database.Name, "test")
-	_index = fmt.Sprintf("%s_%s", ctx.Config.Tables.Index, _pkg)
-	_document = fmt.Sprintf("%s_%s", ctx.Config.Tables.Document, _pkg)
-
-	ctx.Config.Database.Name = _db
-	ctx.Config.Tables.Index = _index
-	ctx.Config.Tables.Document = _document
-
-	if err := ctx.Connect(os.Getenv("RETHINKDB_URL")); err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	_ctx = ctx
-
-	testutils.SetUp(_ctx, _db, _document, _index)
-}
 
 func TestSearch_RenderSpeed(t *testing.T) {
 	tests := []struct {
@@ -183,9 +145,9 @@ func TestSearch_ParseQuery(t *testing.T) {
 }
 
 func TestSearch_Search(t *testing.T) {
-	defer testutils.TearDown(_ctx, _db, _document, _index)
+	defer TearDown(_ctx)
 
-	d := models.NewDocument(
+	d := NewDocument(
 		"example.com/about/",
 		"example.com",
 		"Examples, Examples Everywhere",
@@ -196,7 +158,7 @@ func TestSearch_Search(t *testing.T) {
 		t.Log(err.Error())
 	}
 
-	i := index.Index(d.Content, d.DocID)
+	i := Indexer(d.Content, d.DocID)
 
 	if err := i.Put(_ctx); err != nil {
 		t.Log(err.Error())
@@ -210,9 +172,9 @@ func TestSearch_Search(t *testing.T) {
 }
 
 func TestSearch_Search_NoIndexRaisesError(t *testing.T) {
-	defer testutils.TearDown(_ctx, _db, _document, _index)
+	defer TearDown(_ctx)
 
-	d := models.NewDocument(
+	d := NewDocument(
 		"example.com/about/",
 		"example.com",
 		"Examples, Examples Everywhere",
@@ -223,7 +185,7 @@ func TestSearch_Search_NoIndexRaisesError(t *testing.T) {
 		t.Log(err.Error())
 	}
 
-	i := index.Index(d.Content, d.DocID)
+	i := Indexer(d.Content, d.DocID)
 
 	if err := i.Put(_ctx); err != nil {
 		t.Log(err.Error())

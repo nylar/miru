@@ -1,18 +1,15 @@
-package app
+package miru
 
 import (
 	"io/ioutil"
-
-	"github.com/nylar/miru/config"
-	"github.com/nylar/miru/queue"
 
 	rdb "github.com/dancannon/gorethink"
 )
 
 type Context struct {
 	Db     *rdb.Session
-	Config *config.Config
-	Queues *queue.Queues
+	Config *Config
+	Queues *Queues
 }
 
 func NewContext() *Context {
@@ -25,10 +22,10 @@ func (c *Context) LoadConfig(f string) error {
 	file, err := ioutil.ReadFile(f)
 	data := string(file)
 	if err != nil {
-		data = config.DefaultConfig
+		data = DefaultConfig
 	}
 
-	conf, err := config.LoadConfig(data)
+	conf, err := LoadConfig(data)
 	if err != nil {
 		return err
 	}
@@ -52,5 +49,5 @@ func (c *Context) Connect(host string) error {
 }
 
 func (c *Context) InitQueues() {
-	c.Queues = queue.NewQueues()
+	c.Queues = NewQueues()
 }

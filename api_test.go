@@ -1,66 +1,18 @@
-package api
+package miru
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
 
 	rdb "github.com/dancannon/gorethink"
-	"github.com/gorilla/mux"
-	"github.com/nylar/miru/app"
-	"github.com/nylar/miru/queue"
-	"github.com/nylar/miru/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	_ctx *app.Context
-	_pkg = "api"
-
-	_db, _index, _document string
-
-	m = mux.NewRouter().StrictSlash(true)
-)
-
-func init() {
-	ctx := app.NewContext()
-
-	if err := ctx.LoadConfig("../config.toml"); err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	_db = fmt.Sprintf("%s_%s", ctx.Config.Database.Name, "test")
-	_index = fmt.Sprintf("%s_%s", ctx.Config.Tables.Index, _pkg)
-	_document = fmt.Sprintf("%s_%s", ctx.Config.Tables.Document, _pkg)
-
-	ctx.Config.Database.Name = _db
-	ctx.Config.Tables.Index = _index
-	ctx.Config.Tables.Document = _document
-
-	if err := ctx.Connect(os.Getenv("RETHINKDB_URL")); err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	_ctx = ctx
-
-	testutils.SetUp(_ctx, _db, _document, _index)
-}
-
-func Handler(status int, data []byte) *httptest.Server {
-	return httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(status)
-			w.Write(data)
-		}))
-}
-
 func TestAPI_CrawlHandler(t *testing.T) {
-	defer testutils.TearDown(_ctx, _db, _document, _index)
+	defer TearDown(_ctx)
 
 	data := []byte(`
 <!DOCTYPE html>
@@ -210,7 +162,7 @@ func TestAPI_APIQueuesHandler(t *testing.T) {
 	_ctx.Queues = nil
 	_ctx.InitQueues()
 
-	q := queue.NewQueue()
+	q := NewQueue()
 	q.Name = "example.com"
 	_ctx.Queues.Add(q)
 
@@ -236,7 +188,7 @@ func TestAPI_APIQueueHandler(t *testing.T) {
 	_ctx.Queues = nil
 	_ctx.InitQueues()
 
-	q := queue.NewQueue()
+	q := NewQueue()
 	q.Name = "1"
 	_ctx.Queues.Add(q)
 

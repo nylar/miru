@@ -1,10 +1,9 @@
-package app
+package miru
 
 import (
 	"os"
 	"testing"
 
-	"github.com/nylar/miru/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,26 +26,26 @@ func TestContext_LoadConfig(t *testing.T) {
 func TestContext_LoadConfig_NoConfig(t *testing.T) {
 	ctx := NewContext()
 
-	err := ctx.LoadConfig(config.DefaultConfig)
+	err := ctx.LoadConfig(DefaultConfig)
 	assert.NoError(t, err)
 }
 
 func TestContext_LoadConfig_InvalidConfig(t *testing.T) {
 	ctx := NewContext()
 
-	old := config.DefaultConfig
+	old := DefaultConfig
 
-	config.DefaultConfig = "[da"
+	DefaultConfig = "[da"
 
 	err := ctx.LoadConfig("xx")
 	assert.Error(t, err)
 
-	config.DefaultConfig = old
+	DefaultConfig = old
 }
 
 func TestContext_Connect(t *testing.T) {
 	ctx := NewContext()
-	if err := ctx.LoadConfig(config.DefaultConfig); err != nil {
+	if err := ctx.LoadConfig(DefaultConfig); err != nil {
 		t.Fatalf("Could not load config")
 	}
 
@@ -56,7 +55,7 @@ func TestContext_Connect(t *testing.T) {
 
 func TestContext_Connect_BadDB(t *testing.T) {
 	ctx := NewContext()
-	if err := ctx.LoadConfig(config.DefaultConfig); err != nil {
+	if err := ctx.LoadConfig(DefaultConfig); err != nil {
 		t.Fatal(err.Error())
 	}
 

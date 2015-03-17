@@ -1,4 +1,4 @@
-package api
+package miru
 
 import (
 	"encoding/json"
@@ -6,10 +6,6 @@ import (
 	"sort"
 
 	"github.com/gorilla/mux"
-	"github.com/nylar/miru/app"
-	"github.com/nylar/miru/crawler"
-	"github.com/nylar/miru/queue"
-	"github.com/nylar/miru/search"
 	"github.com/rs/cors"
 )
 
@@ -18,7 +14,7 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-func APIRoutes(m *mux.Router, c *app.Context) {
+func APIRoutes(m *mux.Router, c *Context) {
 	s := m.PathPrefix("/api").Subrouter()
 
 	_c := cors.New(cors.Options{})
@@ -29,7 +25,7 @@ func APIRoutes(m *mux.Router, c *app.Context) {
 	s.Handle("/search", _c.Handler(APISearchHandler(c))).Methods("GET")
 }
 
-func APISearchHandler(c *app.Context) http.Handler {
+func APISearchHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 
@@ -45,7 +41,7 @@ func APISearchHandler(c *app.Context) http.Handler {
 			return
 		}
 
-		res := search.Results{}
+		res := Results{}
 		if err := res.Search(query, c); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			encoder.Encode(Response{
@@ -59,12 +55,12 @@ func APISearchHandler(c *app.Context) http.Handler {
 	})
 }
 
-func APICrawlHandler(c *app.Context) http.Handler {
+func APICrawlHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 
 		encoder := json.NewEncoder(w)
-		q := queue.NewQueue()
+		q := NewQueue()
 		url := r.URL.Query().Get("url")
 
 		if len(url) == 0 {
@@ -79,7 +75,7 @@ func APICrawlHandler(c *app.Context) http.Handler {
 		q.Name = url
 		c.Queues.Add(q)
 
-		if err := crawler.Crawl(url, c, q); err != nil {
+		if err := Crawl(url, c, q); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			encoder.Encode(Response{
 				Status:  http.StatusInternalServerError,
@@ -95,22 +91,22 @@ func APICrawlHandler(c *app.Context) http.Handler {
 	})
 }
 
-func APIQueuesHandler(c *app.Context) http.Handler {
+func APIQueuesHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 
-		queues := []*queue.Queue{}
+		queues := []*Queue{}
 		for _, q := range c.Queues.Queues {
 			queues = append(queues, q)
 		}
-		sort.Sort(queue.QueueList(queues))
+		sort.Sort(QueueList(queues))
 
 		encoder := json.NewEncoder(w)
 		encoder.Encode(queues)
 	})
 }
 
-func APIQueueHandler(c *app.Context) http.Handler {
+func APIQueueHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 

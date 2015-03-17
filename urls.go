@@ -1,4 +1,4 @@
-package crawler
+package miru
 
 import (
 	"net/url"
@@ -33,4 +33,3 @@ func ProcessURL(link, site string) (string, error) {
 
 	return link, nil
 }
-

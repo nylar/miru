@@ -1,4 +1,4 @@
-package config
+package miru
 
 import (
 	"testing"

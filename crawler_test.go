@@ -1,58 +1,13 @@
-package crawler
+package miru
 
 import (
-	"fmt"
-	"log"
 	"net/http"
-	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
 	rdb "github.com/dancannon/gorethink"
-	"github.com/nylar/miru/app"
-	"github.com/nylar/miru/queue"
-	"github.com/nylar/miru/testutils"
 	"github.com/stretchr/testify/assert"
 )
-
-var (
-	_ctx *app.Context
-	_pkg = "crawler"
-
-	_db, _index, _document string
-)
-
-func init() {
-	ctx := app.NewContext()
-
-	if err := ctx.LoadConfig("../config.toml"); err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	_db = fmt.Sprintf("%s_%s", ctx.Config.Database.Name, "test")
-	_index = fmt.Sprintf("%s_%s", ctx.Config.Tables.Index, _pkg)
-	_document = fmt.Sprintf("%s_%s", ctx.Config.Tables.Document, _pkg)
-
-	ctx.Config.Database.Name = _db
-	ctx.Config.Tables.Index = _index
-	ctx.Config.Tables.Document = _document
-
-	if err := ctx.Connect(os.Getenv("RETHINKDB_URL")); err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	_ctx = ctx
-
-	testutils.SetUp(_ctx, _db, _document, _index)
-}
-
-func Handler(status int, data []byte) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(status)
-		w.Write(data)
-	}))
-}
 
 func TestCrawler_newDocument(t *testing.T) {
 	html := []byte(`<html><body><p>Hello, World!</p></body></html>`)
@@ -95,7 +50,7 @@ func TestCrawler_newDocument_StripsUnwantedTags(t *testing.T) {
 }
 
 func TestCrawler_Crawl(t *testing.T) {
-	defer testutils.TearDown(_ctx, _db, _document, _index)
+	defer TearDown(_ctx)
 
 	data := []byte(`
 <!DOCTYPE html>
@@ -111,7 +66,7 @@ func TestCrawler_Crawl(t *testing.T) {
 	ts := Handler(200, data)
 	defer ts.Close()
 
-	err := Crawl(ts.URL, _ctx, queue.NewQueue())
+	err := Crawl(ts.URL, _ctx, NewQueue())
 	assert.NoError(t, err)
 
 	var response []interface{}
@@ -126,7 +81,7 @@ func TestCrawler_Crawl(t *testing.T) {
 }
 
 func TestCrawler_Crawl_BadURL(t *testing.T) {
-	err := Crawl("", _ctx, queue.NewQueue())
+	err := Crawl("", _ctx, NewQueue())
 	assert.Error(t, err)
 }
 
@@ -141,7 +96,7 @@ func TestCrawler_RootURL(t *testing.T) {
 }
 
 func TestCrawler_RootURL_BadURL(t *testing.T) {
-	err := Crawl("%", _ctx, queue.NewQueue())
+	err := Crawl("%", _ctx, NewQueue())
 	assert.Error(t, err)
 }
 
@@ -192,7 +147,7 @@ func TestCrawler_Contents(t *testing.T) {
 
 func TestCrawler_Links(t *testing.T) {
 	site := "example.org"
-	q := queue.NewQueue()
+	q := NewQueue()
 
 	htmlSoup := []byte(`
 <p>
@@ -209,7 +164,7 @@ func TestCrawler_Links(t *testing.T) {
 
 func TestCrawler_Links_InvalidUrls(t *testing.T) {
 	site := "example.org"
-	q := queue.NewQueue()
+	q := NewQueue()
 
 	htmlSoup := []byte(`
 <p>
@@ -225,7 +180,7 @@ func TestCrawler_Links_InvalidUrls(t *testing.T) {
 }
 
 func TestCrawler_ProcessPages(t *testing.T) {
-	defer testutils.TearDown(_ctx, _db, _document, _index)
+	defer TearDown(_ctx)
 
 	ts := Handler(200, []byte(`
 <p>
@@ -235,7 +190,7 @@ func TestCrawler_ProcessPages(t *testing.T) {
 </p>`))
 	defer ts.Close()
 
-	q := queue.NewQueue()
+	q := NewQueue()
 	err := Crawl(ts.URL, _ctx, q)
 	assert.NoError(t, err)
 

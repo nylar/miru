@@ -1,9 +1,8 @@
-package index
+package miru
 
 import (
 	"strings"
 
-	"github.com/nylar/miru/models"
 	"github.com/reiver/go-porterstemmer"
 )
 
@@ -201,8 +200,8 @@ func Normalise(word string) string {
 	return word
 }
 
-func RemoveDuplicates(i models.Indexes) models.Indexes {
-	result := models.Indexes{}
+func RemoveDuplicates(i Indexes) Indexes {
+	result := Indexes{}
 	seen := map[string]int64{}
 	for _, val := range i {
 		if _, ok := seen[val.Word]; !ok {
@@ -212,7 +211,7 @@ func RemoveDuplicates(i models.Indexes) models.Indexes {
 			seen[val.Word] = seen[val.Word] + 1
 		}
 	}
-	finalResults := models.Indexes{}
+	finalResults := Indexes{}
 	for _, res := range result {
 		count := seen[res.Word]
 		res.Count = count
@@ -221,25 +220,25 @@ func RemoveDuplicates(i models.Indexes) models.Indexes {
 	return finalResults
 }
 
-func processText(words []string, docID string, c chan *models.Index) {
+func processText(words []string, docID string, c chan *Index) {
 	for _, word := range words {
 		word = Normalise(word)
 		if word == "" {
 			continue
 		}
 
-		index := models.NewIndex(docID, word, 1)
+		index := NewIndex(docID, word, 1)
 
 		c <- index
 	}
 	close(c)
 }
 
-func Index(text, docID string) models.Indexes {
-	indexes := models.Indexes{}
+func Indexer(text, docID string) Indexes {
+	indexes := Indexes{}
 	words := strings.Fields(text)
 
-	c := make(chan *models.Index, len(words))
+	c := make(chan *Index, len(words))
 
 	processText(words, docID, c)
 	for i := range c {

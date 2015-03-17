@@ -1,47 +1,11 @@
-package models
+package miru
 
 import (
-	"fmt"
-	"log"
-	"os"
 	"testing"
 
 	rdb "github.com/dancannon/gorethink"
-	"github.com/nylar/miru/app"
-	"github.com/nylar/miru/testutils"
 	"github.com/stretchr/testify/assert"
 )
-
-var (
-	_ctx *app.Context
-	_pkg = "models"
-
-	_db, _index, _document string
-)
-
-func init() {
-	ctx := app.NewContext()
-
-	if err := ctx.LoadConfig("../config.toml"); err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	_db = fmt.Sprintf("%s_%s", ctx.Config.Database.Name, "test")
-	_index = fmt.Sprintf("%s_%s", ctx.Config.Tables.Index, _pkg)
-	_document = fmt.Sprintf("%s_%s", ctx.Config.Tables.Document, _pkg)
-
-	ctx.Config.Database.Name = _db
-	ctx.Config.Tables.Index = _index
-	ctx.Config.Tables.Document = _document
-
-	if err := ctx.Connect(os.Getenv("RETHINKDB_URL")); err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	_ctx = ctx
-
-	testutils.SetUp(_ctx, _db, _document, _index)
-}
 
 func TestModels_NewDocument(t *testing.T) {
 	source := "example.com/about/"
@@ -58,7 +22,7 @@ func TestModels_NewDocument(t *testing.T) {
 }
 
 func TestModels_DocumentPut(t *testing.T) {
-	defer testutils.TearDown(_ctx, _db, _document, _index)
+	defer TearDown(_ctx)
 
 	doc := NewDocument(
 		"example.com/about/",
@@ -81,7 +45,7 @@ func TestModels_DocumentPut(t *testing.T) {
 }
 
 func TestModels_DocumentPut_Duplicate(t *testing.T) {
-	defer testutils.TearDown(_ctx, _db, _document, _index)
+	defer TearDown(_ctx)
 
 	doc := NewDocument("example.com/about/", "example.com", "", "")
 	doc2 := NewDocument("example.com/about/", "example.com", "", "")
@@ -111,7 +75,7 @@ func TestModels_NewIndex(t *testing.T) {
 }
 
 func TestModels_IndexPut(t *testing.T) {
-	defer testutils.TearDown(_ctx, _db, _document, _index)
+	defer TearDown(_ctx)
 
 	index := NewIndex("example.com/about/", "make", 52)
 
@@ -129,7 +93,7 @@ func TestModels_IndexPut(t *testing.T) {
 }
 
 func TestModels_IndexPut_Duplicate(t *testing.T) {
-	defer testutils.TearDown(_ctx, _db, _document, _index)
+	defer TearDown(_ctx)
 
 	index := NewIndex("ZXhhbXBsZS5jb20vYWJvdXQv", "make", 52)
 	index2 := NewIndex("ZXhhbXBsZS5jb20vYWJvdXQv", "make", 52)

@@ -1,10 +1,9 @@
-package models
+package miru
 
 import (
 	"errors"
 
 	rdb "github.com/dancannon/gorethink"
-	"github.com/nylar/miru/app"
 	"github.com/satori/go.uuid"
 )
 
@@ -27,7 +26,7 @@ func NewDocument(url, site, title, content string) *Document {
 	return doc
 }
 
-func (d *Document) Put(c *app.Context) error {
+func (d *Document) Put(c *Context) error {
 	res, _ := rdb.Db(c.Config.Database.Name).Table(
 		c.Config.Tables.Document).Insert(d).RunWrite(c.Db)
 
@@ -54,7 +53,7 @@ func NewIndex(docID, word string, count int64) *Index {
 	return index
 }
 
-func (i *Index) Put(c *app.Context) error {
+func (i *Index) Put(c *Context) error {
 	res, _ := rdb.Db(c.Config.Database.Name).Table(
 		c.Config.Tables.Index).Insert(i).RunWrite(c.Db)
 
@@ -66,7 +65,7 @@ func (i *Index) Put(c *app.Context) error {
 
 type Indexes []*Index
 
-func (ixs *Indexes) Put(c *app.Context) error {
+func (ixs *Indexes) Put(c *Context) error {
 	res, _ := rdb.Db(c.Config.Database.Name).Table(
 		c.Config.Tables.Index).Insert(ixs).RunWrite(c.Db)
 

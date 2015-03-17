@@ -1,4 +1,4 @@
-package crawler
+package miru
 
 import (
 	"bytes"
@@ -10,10 +10,6 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/nylar/miru/app"
-	"github.com/nylar/miru/index"
-	"github.com/nylar/miru/models"
-	"github.com/nylar/miru/queue"
 )
 
 var (
@@ -33,7 +29,7 @@ func newDocument(document []byte) *goquery.Document {
 	return doc
 }
 
-func IndexPage(c *app.Context, q *queue.Queue, url, site string) error {
+func IndexPage(c *Context, q *Queue, url, site string) error {
 	req := Request(url)
 	resp, err := MustGet(req)
 	if err != nil {
@@ -47,14 +43,14 @@ func IndexPage(c *app.Context, q *queue.Queue, url, site string) error {
 	d := NewDoc(doc, url, site)
 	d.Put(c)
 
-	i := index.Index(d.Content, d.DocID)
+	i := Indexer(d.Content, d.DocID)
 	i.Put(c)
 
 	Links(doc, q, site)
 	return nil
 }
 
-func ProcessPages(c *app.Context, q *queue.Queue, site string, delay int64) {
+func ProcessPages(c *Context, q *Queue, site string, delay int64) {
 	for q.Len() > 0 {
 		item, _ := q.Dequeue()
 		IndexPage(c, q, item, site)
@@ -63,7 +59,7 @@ func ProcessPages(c *app.Context, q *queue.Queue, site string, delay int64) {
 	return
 }
 
-func Crawl(url string, c *app.Context, q *queue.Queue) error {
+func Crawl(url string, c *Context, q *Queue) error {
 	site, err := RootURL(url)
 	if err != nil {
 		return err
@@ -76,7 +72,7 @@ func Crawl(url string, c *app.Context, q *queue.Queue) error {
 		return err
 	}
 
-	go func(c *app.Context, q *queue.Queue, site string, delay int64) {
+	go func(c *Context, q *Queue, site string, delay int64) {
 		ProcessPages(c, q, site, Delay)
 	}(c, q, site, Delay)
 
@@ -121,11 +117,11 @@ func Contents(resp *http.Response) []byte {
 	return d
 }
 
-func NewDoc(doc *goquery.Document, url, site string) *models.Document {
+func NewDoc(doc *goquery.Document, url, site string) *Document {
 	title := ExtractTitle(doc)
 	content := ExtractText(doc)
 
-	d := models.NewDocument(url, site, title, content)
+	d := NewDocument(url, site, title, content)
 
 	return d
 }
@@ -138,7 +134,7 @@ func RootURL(link string) (string, error) {
 	return _url.Host, nil
 }
 
-func Links(doc *goquery.Document, q *queue.Queue, site string) {
+func Links(doc *goquery.Document, q *Queue, site string) {
 	links := ExtractLinks(doc)
 	for _, link := range links {
 		link, err := ProcessURL(link, site)
