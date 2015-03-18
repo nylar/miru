@@ -56,6 +56,7 @@ func ProcessPages(c *Context, q *Queue, site string, delay int64) {
 		IndexPage(c, q, item, site)
 		time.Sleep(time.Duration(delay) * time.Second)
 	}
+	q.Status = "finished"
 	return
 }
 

@@ -19,24 +19,18 @@ func NewQueues() *Queues {
 	return qs
 }
 
-type QueueList []*Queue
-
-func (ql QueueList) Len() int { return len(ql) }
-
-func (ql QueueList) Swap(i, j int) { ql[i], ql[j] = ql[j], ql[i] }
-
-func (ql QueueList) Less(i, j int) bool { return ql[i].Name < ql[j].Name }
-
 type Queue struct {
 	Manager map[string]bool `json:"manager"`
 	Items   []string        `json:"items"`
 	Name    string          `json:"name"`
+	Status  string          `json:"status"`
 	sync.Mutex
 }
 
 func NewQueue() *Queue {
 	q := new(Queue)
 	q.Manager = make(map[string]bool)
+	q.Status = "active"
 
 	return q
 }

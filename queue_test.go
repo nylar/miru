@@ -2,7 +2,6 @@ package miru
 
 import (
 	"fmt"
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -67,19 +66,4 @@ func TestQueues_Add(t *testing.T) {
 
 	qs.Add(q)
 	assert.Equal(t, 1, len(qs.Queues))
-}
-
-func TestQueue_Sort(t *testing.T) {
-	qs := []*Queue{}
-
-	q := NewQueue()
-	q.Name = "google.com"
-	qs = append(qs, q)
-
-	q2 := NewQueue()
-	q2.Name = "example.com"
-	qs = append(qs, q2)
-
-	sort.Sort(QueueList(qs))
-	assert.Equal(t, qs, []*Queue{q2, q})
 }

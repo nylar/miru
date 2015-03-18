@@ -14,6 +14,19 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+type queueList struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+}
+
+type QueueList []queueList
+
+func (ql QueueList) Len() int { return len(ql) }
+
+func (ql QueueList) Swap(i, j int) { ql[i], ql[j] = ql[j], ql[i] }
+
+func (ql QueueList) Less(i, j int) bool { return ql[i].Name < ql[j].Name }
+
 func APIRoutes(m *mux.Router, c *Context) {
 	s := m.PathPrefix("/api").Subrouter()
 
@@ -72,7 +85,9 @@ func APICrawlHandler(c *Context) http.Handler {
 			return
 		}
 
-		q.Name = url
+		site, _ := RootURL(url)
+
+		q.Name = site
 		c.Queues.Add(q)
 
 		if err := Crawl(url, c, q); err != nil {
@@ -95,9 +110,10 @@ func APIQueuesHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 
-		queues := []*Queue{}
+		queues := []queueList{}
 		for _, q := range c.Queues.Queues {
-			queues = append(queues, q)
+			item := queueList{Name: q.Name, Status: q.Status}
+			queues = append(queues, item)
 		}
 		sort.Sort(QueueList(queues))
 
@@ -113,7 +129,18 @@ func APIQueueHandler(c *Context) http.Handler {
 		encoder := json.NewEncoder(w)
 		name := mux.Vars(r)["name"]
 
-		q, ok := c.Queues.Queues[name]
+		type item struct {
+			Item string `json:"item"`
+			Done bool   `json:"done"`
+		}
+
+		type queue struct {
+			Name   string `json:"name"`
+			Status string `json:"status"`
+			Items  []item `json:"items"`
+		}
+
+		_q, ok := c.Queues.Queues[name]
 		if !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			encoder.Encode(Response{
@@ -122,6 +149,20 @@ func APIQueueHandler(c *Context) http.Handler {
 			})
 			return
 		}
+		q := new(queue)
+		q.Name = _q.Name
+		q.Status = _q.Status
+
+		for k, _ := range _q.Manager {
+			i := item{Item: k, Done: true}
+			for _, _item := range _q.Items {
+				if k == _item {
+					i.Done = false
+				}
+			}
+			q.Items = append(q.Items, i)
+		}
+
 		encoder.Encode(q)
 	})
 }

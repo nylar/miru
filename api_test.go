@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"testing"
 
 	rdb "github.com/dancannon/gorethink"
@@ -179,7 +180,7 @@ func TestAPI_APIQueuesHandler(t *testing.T) {
 
 	assert.Equal(
 		t,
-		"[{\"manager\":{},\"items\":null,\"name\":\"example.com\"}]\n",
+		"[{\"name\":\"example.com\",\"status\":\"active\"}]\n",
 		w.Body.String(),
 	)
 }
@@ -191,6 +192,9 @@ func TestAPI_APIQueueHandler(t *testing.T) {
 	q := NewQueue()
 	q.Name = "1"
 	_ctx.Queues.Add(q)
+
+	q.Enqueue("http://1.com/contact/")
+	q.Enqueue("http://1.com/about/")
 
 	r, err := http.NewRequest("GET", "/api/queue/"+q.Name, nil)
 	if err != nil {
@@ -205,7 +209,9 @@ func TestAPI_APIQueueHandler(t *testing.T) {
 
 	assert.Equal(
 		t,
-		"{\"manager\":{},\"items\":null,\"name\":\"1\"}\n",
+		"{\"name\":\"1\",\"status\":\"active\",\"items\":[{\"item\""+
+			":\"http://1.com/contact/\",\"done\":false},"+
+			"{\"item\":\"http://1.com/about/\",\"done\":false}]}\n",
 		w.Body.String(),
 	)
 }
@@ -230,4 +236,18 @@ func TestAPI_APIQueueHandler_InvalidQueue(t *testing.T) {
 		"{\"status\":400,\"message\":\"Name provided is not a valid queue.\"}\n",
 		w.Body.String(),
 	)
+}
+
+func TestAPI_QueueList_Sort(t *testing.T) {
+	ql := QueueList{}
+	ql = append(ql, queueList{Name: "b", Status: "active"})
+	ql = append(ql, queueList{Name: "a", Status: "paused"})
+
+	assert.Equal(t, "b", ql[0].Name)
+	assert.Equal(t, "a", ql[1].Name)
+
+	sort.Sort(QueueList(ql))
+
+	assert.Equal(t, "a", ql[0].Name)
+	assert.Equal(t, "b", ql[1].Name)
 }
