@@ -1,60 +1,39 @@
 {
-	"ImportPath": "github.com/nylar/miru",
-	"GoVersion": "go1.4",
-	"Deps": [
-		{
-			"ImportPath": "code.google.com/p/cascadia",
-			"Comment": "null-31",
-			"Rev": "5d796540e3cb93ea0556c897e6a3c7690f614d35"
-		},
-		{
-			"ImportPath": "code.google.com/p/goprotobuf/proto",
-			"Comment": "go.r60-163",
-			"Rev": "9352842ae63ee1d7e74e074ce7bb10370c4b6b9e"
-		},
-		{
-			"ImportPath": "github.com/BurntSushi/toml",
-			"Comment": "v0.1.0-18-g443a628",
-			"Rev": "443a628bc233f634a75bcbdd71fe5350789f1afa"
-		},
-		{
-			"ImportPath": "github.com/PuerkitoBio/goquery",
-			"Comment": "v0.3.2-66-g12a46cd",
-			"Rev": "12a46cd4a183cabd212b37144cf4df55454cf1b8"
-		},
-		{
-			"ImportPath": "github.com/dancannon/gorethink",
-			"Comment": "v0.6.2-1-gc992dc8",
-			"Rev": "c992dc84b10d3406c317d17d465ec9a01c72769e"
-		},
-		{
-			"ImportPath": "github.com/gorilla/context",
-			"Rev": "14f550f51af52180c2eefed15e5fd18d63c0a64a"
-		},
-		{
-			"ImportPath": "github.com/gorilla/mux",
-			"Rev": "4b8fbc56f3b2400a7c7ea3dba9b3539787c486b6"
-		},
-		{
-			"ImportPath": "github.com/reiver/go-porterstemmer",
-			"Comment": "v1.0.1",
-			"Rev": "b4dd94e38f29620fe0f97ae4b0f6994b0d5d75f0"
-		},
-		{
-			"ImportPath": "github.com/rs/cors",
-			"Rev": "560591b2cc0014fe73937d3ba936ad052aba17fb"
-		},
-		{
-			"ImportPath": "github.com/satori/go.uuid",
-			"Rev": "242673bbc820e051ef00033e274d32e08ece9e15"
-		},
-		{
-			"ImportPath": "github.com/stretchr/testify/assert",
-			"Rev": "de7fcff264cd05cc0c90c509ea789a436a0dd206"
-		},
-		{
-			"ImportPath": "golang.org/x/net/html",
-			"Rev": "cbcac7bb8415db9b6cb4d1ebab1dc9afbd688b97"
-		}
-	]
+    "ImportPath": "github.com/nylar/miru",
+    "GoVersion": "go1.4",
+    "Deps": [{
+        "ImportPath": "github.com/BurntSushi/toml",
+        "Comment": "v0.1.0-18-g443a628",
+        "Rev": "443a628bc233f634a75bcbdd71fe5350789f1afa"
+    }, {
+        "ImportPath": "github.com/PuerkitoBio/goquery",
+        "Comment": "v0.3.2-66-g12a46cd",
+        "Rev": "12a46cd4a183cabd212b37144cf4df55454cf1b8"
+    }, {
+        "ImportPath": "github.com/dancannon/gorethink",
+        "Comment": "v0.6.2-1-gc992dc8",
+        "Rev": "c992dc84b10d3406c317d17d465ec9a01c72769e"
+    }, {
+        "ImportPath": "github.com/gorilla/context",
+        "Rev": "14f550f51af52180c2eefed15e5fd18d63c0a64a"
+    }, {
+        "ImportPath": "github.com/gorilla/mux",
+        "Rev": "4b8fbc56f3b2400a7c7ea3dba9b3539787c486b6"
+    }, {
+        "ImportPath": "github.com/reiver/go-porterstemmer",
+        "Comment": "v1.0.1",
+        "Rev": "b4dd94e38f29620fe0f97ae4b0f6994b0d5d75f0"
+    }, {
+        "ImportPath": "github.com/rs/cors",
+        "Rev": "560591b2cc0014fe73937d3ba936ad052aba17fb"
+    }, {
+        "ImportPath": "github.com/satori/go.uuid",
+        "Rev": "242673bbc820e051ef00033e274d32e08ece9e15"
+    }, {
+        "ImportPath": "github.com/stretchr/testify/assert",
+        "Rev": "de7fcff264cd05cc0c90c509ea789a436a0dd206"
+    }, {
+        "ImportPath": "golang.org/x/net/html",
+        "Rev": "cbcac7bb8415db9b6cb4d1ebab1dc9afbd688b97"
+    }]
 }
