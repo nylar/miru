@@ -251,3 +251,45 @@ func TestAPI_QueueList_Sort(t *testing.T) {
 	assert.Equal(t, "a", ql[0].Name)
 	assert.Equal(t, "b", ql[1].Name)
 }
+
+func TestAPI_Sites(t *testing.T) {
+	r, err := http.NewRequest("GET", "/api/sites", nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	w := httptest.NewRecorder()
+	APIRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
+
+	assert.Equal(t, 200, w.Code)
+
+	assert.Equal(
+		t,
+		"[]\n",
+		w.Body.String(),
+	)
+}
+
+func TestAPI_Sites_DbError(t *testing.T) {
+	_ctx.Config.Tables.Document = "error"
+
+	r, err := http.NewRequest("GET", "/api/sites", nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	w := httptest.NewRecorder()
+	APIRoutes(m, _ctx)
+	m.ServeHTTP(w, r)
+
+	assert.Equal(t, 500, w.Code)
+
+	assert.Equal(
+		t,
+		"{\"status\":500,\"message\":\"Could not retrieve sites\"}\n",
+		w.Body.String(),
+	)
+
+	_ctx.Config.Tables.Document = "documents"
+}

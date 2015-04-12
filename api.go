@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 
+	rdb "github.com/dancannon/gorethink"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
@@ -36,6 +37,35 @@ func APIRoutes(m *mux.Router, c *Context) {
 	s.Handle("/queues/", _c.Handler(APIQueuesHandler(c))).Methods("GET")
 	s.Handle("/crawl", _c.Handler(APICrawlHandler(c))).Methods("GET")
 	s.Handle("/search", _c.Handler(APISearchHandler(c))).Methods("GET")
+	s.Handle("/sites", _c.Handler(APISitesHandler(c))).Methods("GET")
+}
+
+func APISitesHandler(c *Context) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+
+		encoder := json.NewEncoder(w)
+
+		type site struct {
+			Site string `gorethinkdb:"site" json:"site"`
+		}
+
+		sites := []site{}
+
+		res, err := rdb.Db(c.Config.Database.Name).Table(c.Config.Tables.Document).Pluck("site").Distinct().Run(c.Db)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			encoder.Encode(Response{
+				Status:  http.StatusInternalServerError,
+				Message: "Could not retrieve sites",
+			})
+			return
+		}
+
+		res.All(&sites)
+
+		encoder.Encode(sites)
+	})
 }
 
 func APISearchHandler(c *Context) http.Handler {
