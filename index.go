@@ -183,6 +183,7 @@ var stopWords = map[string]bool{
 	"yourselves": true,
 }
 
+// Stopper returns true if the word is in stopWords
 func Stopper(word string) bool {
 	if _, ok := stopWords[word]; ok {
 		return true
@@ -190,6 +191,7 @@ func Stopper(word string) bool {
 	return false
 }
 
+// Normalise transform a word by lowercasing and applying stemming.
 func Normalise(word string) string {
 	word = strings.ToLower(word)
 	if Stopper(word) {
@@ -200,6 +202,8 @@ func Normalise(word string) string {
 	return word
 }
 
+// RemoveDuplicates counts the number of duplicates and then keeps only the
+// unique values.
 func RemoveDuplicates(i Indexes) Indexes {
 	result := Indexes{}
 	seen := map[string]int64{}
@@ -220,6 +224,7 @@ func RemoveDuplicates(i Indexes) Indexes {
 	return finalResults
 }
 
+// processText concurrently processesa list of words.
 func processText(words []string, docID string, c chan *Index) {
 	for _, word := range words {
 		word = Normalise(word)
@@ -234,6 +239,7 @@ func processText(words []string, docID string, c chan *Index) {
 	close(c)
 }
 
+// Indexer tokenises and counts occurences of words in a document
 func Indexer(text, docID string) Indexes {
 	indexes := Indexes{}
 	words := strings.Fields(text)

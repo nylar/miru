@@ -5,20 +5,24 @@ import (
 	"sync"
 )
 
+// Queues is a map of queue's
 type Queues struct {
 	Queues map[string]*Queue `json:"queues"`
 }
 
+// Add pushes a new queue onto the queue list
 func (qs *Queues) Add(q *Queue) {
 	qs.Queues[q.Name] = q
 }
 
+// NewQueues return a new queue list
 func NewQueues() *Queues {
 	qs := new(Queues)
 	qs.Queues = make(map[string]*Queue)
 	return qs
 }
 
+// Queue holds data regarding a queue
 type Queue struct {
 	Manager map[string]bool `json:"manager"`
 	Items   []string        `json:"items"`
@@ -27,6 +31,7 @@ type Queue struct {
 	sync.Mutex
 }
 
+// NewQueue creates a new queue and sets its status to active.
 func NewQueue() *Queue {
 	q := new(Queue)
 	q.Manager = make(map[string]bool)
@@ -35,6 +40,7 @@ func NewQueue() *Queue {
 	return q
 }
 
+// Enqueue pushes a new item onto the queue.
 func (q *Queue) Enqueue(item string) {
 	q.Lock()
 	defer q.Unlock()
@@ -45,10 +51,12 @@ func (q *Queue) Enqueue(item string) {
 	}
 }
 
+// Len returns the number of items in the queue.
 func (q *Queue) Len() int {
 	return len(q.Items)
 }
 
+// Dequeue pops an item and returns it
 func (q *Queue) Dequeue() (string, error) {
 	q.Lock()
 	defer q.Unlock()

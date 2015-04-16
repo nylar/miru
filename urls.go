@@ -5,9 +5,10 @@ import (
 	"strings"
 )
 
+// ProcessURL determines whether a URL is to be enqueued or not.
 func ProcessURL(link, site string) (string, error) {
 	if strings.HasPrefix(link, "#") {
-		return "", InvalidUrlError
+		return "", ErrInvalidURL
 	}
 
 	// A relative link that may start with a period, remove the period.
@@ -25,7 +26,7 @@ func ProcessURL(link, site string) (string, error) {
 	// Check url is absolute and equal to the root site.
 	if _url.IsAbs() {
 		if _url.Host != site {
-			return "", InvalidUrlError
+			return "", ErrInvalidURL
 		}
 	} else { // Generate a full URL
 		link = "http://" + site + "/" + link

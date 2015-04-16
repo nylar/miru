@@ -6,6 +6,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+// ExtractTitle looks for either a title tag or h1 tag and sets that as the title
 func ExtractTitle(doc *goquery.Document) string {
 	title := doc.Find("title")
 	if title.Length() > 0 {
@@ -18,6 +19,7 @@ func ExtractTitle(doc *goquery.Document) string {
 	return ""
 }
 
+// ExtractText returns all p tags in a page
 func ExtractText(doc *goquery.Document) string {
 	texts := []string{}
 	doc.Find("p").Each(func(i int, s *goquery.Selection) {
@@ -29,6 +31,7 @@ func ExtractText(doc *goquery.Document) string {
 	return strings.Join(texts, "\n")
 }
 
+// ExtractLinks returns all internal links from a page.
 func ExtractLinks(doc *goquery.Document) []string {
 	links := []string{}
 	doc.Find("a").Each(func(i int, s *goquery.Selection) {

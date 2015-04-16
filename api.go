@@ -10,6 +10,7 @@ import (
 	"github.com/rs/cors"
 )
 
+// Response provides a generic interface for writing API messages back to the client.
 type Response struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
@@ -20,6 +21,7 @@ type queueList struct {
 	Status string `json:"status"`
 }
 
+// QueueList is a sortable interface for keeping queue items in order.
 type QueueList []queueList
 
 func (ql QueueList) Len() int { return len(ql) }
@@ -28,6 +30,8 @@ func (ql QueueList) Swap(i, j int) { ql[i], ql[j] = ql[j], ql[i] }
 
 func (ql QueueList) Less(i, j int) bool { return ql[i].Name < ql[j].Name }
 
+// APIRoutes configures the routes for the API, cross-origin resource sharing is
+// applied to each route then can be reached by external requests.
 func APIRoutes(m *mux.Router, c *Context) {
 	s := m.PathPrefix("/api").Subrouter()
 
@@ -40,6 +44,7 @@ func APIRoutes(m *mux.Router, c *Context) {
 	s.Handle("/sites", _c.Handler(APISitesHandler(c))).Methods("GET")
 }
 
+// APISitesHandler (GET) returns a list of sites.
 func APISitesHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
@@ -68,6 +73,8 @@ func APISitesHandler(c *Context) http.Handler {
 	})
 }
 
+// APISearchHandler (GET) allows one to search the datastore. Accepts one
+// parameter: 'q', which is a URL encoded string.
 func APISearchHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
@@ -75,6 +82,7 @@ func APISearchHandler(c *Context) http.Handler {
 		encoder := json.NewEncoder(w)
 		query := r.URL.Query().Get("q")
 
+		// No 'q' parameter, quit now instead of wasting a request.
 		if len(query) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			encoder.Encode(Response{
@@ -98,6 +106,8 @@ func APISearchHandler(c *Context) http.Handler {
 	})
 }
 
+// APICrawlHandler (GET) allows one to provide a URL to be crawled. Will recursively
+// crawl in the background.
 func APICrawlHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
@@ -106,6 +116,7 @@ func APICrawlHandler(c *Context) http.Handler {
 		q := NewQueue()
 		url := r.URL.Query().Get("url")
 
+		// No 'url' parameter, quit because no URL to crawl.
 		if len(url) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			encoder.Encode(Response{
@@ -136,6 +147,7 @@ func APICrawlHandler(c *Context) http.Handler {
 	})
 }
 
+// APIQueuesHandler (GET) returns a list of active queues.
 func APIQueuesHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
@@ -152,6 +164,7 @@ func APIQueuesHandler(c *Context) http.Handler {
 	})
 }
 
+// APIQueueHandler (GET) returns a single queue.
 func APIQueueHandler(c *Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
@@ -170,6 +183,7 @@ func APIQueueHandler(c *Context) http.Handler {
 			Items  []item `json:"items"`
 		}
 
+		// Queue not found, return Bad Request.
 		_q, ok := c.Queues.Queues[name]
 		if !ok {
 			w.WriteHeader(http.StatusBadRequest)
@@ -183,7 +197,7 @@ func APIQueueHandler(c *Context) http.Handler {
 		q.Name = _q.Name
 		q.Status = _q.Status
 
-		for k, _ := range _q.Manager {
+		for k := range _q.Manager {
 			i := item{Item: k, Done: true}
 			for _, _item := range _q.Items {
 				if k == _item {

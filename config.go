@@ -2,6 +2,8 @@ package miru
 
 import "github.com/BurntSushi/toml"
 
+// DefaultConfig is used if no config.toml file is found, sets the config to
+// acceptable defaults.
 var DefaultConfig = `
 [database]
 host = "localhost:28015"
@@ -15,6 +17,8 @@ document = "documents"
 port = "8036"
 `
 
+// Config holds configuration information regarding the database and the port in
+// which to serve on.
 type Config struct {
 	Database database
 	Tables   tables
@@ -35,6 +39,7 @@ type api struct {
 	Port string
 }
 
+// LoadConfig loads configuration data into the Config struct.
 func LoadConfig(data string) (*Config, error) {
 	var conf Config
 	if _, err := toml.Decode(data, &conf); err != nil {
